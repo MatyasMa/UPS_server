@@ -341,23 +341,14 @@ void broadcast_message(const char *message) {
 }
 
 int create_shared_memory() {
-    int shmid;
-
-    // Create shared memory segment for MAX_PLAYERS
-    shmid = shmget(IPC_PRIVATE, sizeof(struct player) * MAX_PLAYERS, IPC_CREAT | 0666);
-    if (shmid < 0) {
-        perror("shmget failed");
+    // Dynamicky alokujeme paměť pro pole hráčů
+    players = (struct player *)malloc(sizeof(struct player) * MAX_PLAYERS);
+    if (players == NULL) {
+        perror("malloc failed");
         return -1;
     }
 
-    // Attach shared memory segment to the players pointer
-    players = (struct player *)shmat(shmid, NULL, 0);
-    if (players == (void *)-1) {
-        perror("shmat failed");
-        return -1;
-    }
-
-    // Initialize player data in shared memory
+    // Inicializace hráčských dat
     for (int i = 0; i < MAX_PLAYERS; ++i) {
         players[i].id = 0;
         players[i].is_ready = 0;
@@ -365,7 +356,9 @@ int create_shared_memory() {
         players[i].can_play = 0;
         players[i].nickname = malloc(50 * sizeof(char));
         if (!players[i].nickname) {
-            exit(1);
+            perror("malloc failed for nickname");
+            free(players);  // Uvolnění již alokované paměti
+            return -1;
         }
         players[i].loses_game = -1;
         players[i].win_game = -1;
