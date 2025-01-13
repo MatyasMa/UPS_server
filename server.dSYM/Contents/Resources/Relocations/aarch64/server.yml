@@ -2,28 +2,28 @@
 triple:          'arm64-apple-darwin'
 binary-path:     server
 relocations:
-  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _handle_sigchld, symObjAddr: 0x0, symBinAddr: 0x1000025B0, symSize: 0x44 }
-  - { offsetInCU: 0x3F, offset: 0x3F, size: 0x8, addend: 0x0, symName: _players_count, symObjAddr: 0x4364, symBinAddr: 0x100008070, symSize: 0x0 }
-  - { offsetInCU: 0x5B, offset: 0x5B, size: 0x8, addend: 0x0, symName: _players_mutex, symObjAddr: 0x1518, symBinAddr: 0x100008000, symSize: 0x0 }
-  - { offsetInCU: 0xC8, offset: 0xC8, size: 0x8, addend: 0x0, symName: _cond, symObjAddr: 0x1558, symBinAddr: 0x100008040, symSize: 0x0 }
-  - { offsetInCU: 0x120, offset: 0x120, size: 0x8, addend: 0x0, symName: _current_player_id, symObjAddr: 0x4368, symBinAddr: 0x100008074, symSize: 0x0 }
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _handle_sigchld, symObjAddr: 0x0, symBinAddr: 0x100002360, symSize: 0x44 }
+  - { offsetInCU: 0x3F, offset: 0x3F, size: 0x8, addend: 0x0, symName: _players_count, symObjAddr: 0x46F4, symBinAddr: 0x100008070, symSize: 0x0 }
+  - { offsetInCU: 0x5B, offset: 0x5B, size: 0x8, addend: 0x0, symName: _players_mutex, symObjAddr: 0x16B8, symBinAddr: 0x100008000, symSize: 0x0 }
+  - { offsetInCU: 0xC8, offset: 0xC8, size: 0x8, addend: 0x0, symName: _cond, symObjAddr: 0x16F8, symBinAddr: 0x100008040, symSize: 0x0 }
+  - { offsetInCU: 0x120, offset: 0x120, size: 0x8, addend: 0x0, symName: _current_player_id, symObjAddr: 0x46F8, symBinAddr: 0x100008074, symSize: 0x0 }
   - { offsetInCU: 0x135, offset: 0x135, size: 0x8, addend: 0x0, symName: _players, symBinAddr: 0x100008080, symSize: 0x0 }
   - { offsetInCU: 0x276, offset: 0x276, size: 0x8, addend: 0x0, symName: _all_players_ready, symBinAddr: 0x100008078, symSize: 0x0 }
-  - { offsetInCU: 0x2D0, offset: 0x2D0, size: 0x8, addend: 0x0, symName: _handle_sigchld, symObjAddr: 0x0, symBinAddr: 0x1000025B0, symSize: 0x44 }
-  - { offsetInCU: 0x2F4, offset: 0x2F4, size: 0x8, addend: 0x0, symName: _handle_client, symObjAddr: 0x44, symBinAddr: 0x1000025F4, symSize: 0x7B4 }
-  - { offsetInCU: 0x3A0, offset: 0x3A0, size: 0x8, addend: 0x0, symName: _broadcast_message, symObjAddr: 0x7F8, symBinAddr: 0x100002DA8, symSize: 0xE4 }
-  - { offsetInCU: 0x3E3, offset: 0x3E3, size: 0x8, addend: 0x0, symName: _hide_players_buttons, symObjAddr: 0x8DC, symBinAddr: 0x100002E8C, symSize: 0x90 }
-  - { offsetInCU: 0x415, offset: 0x415, size: 0x8, addend: 0x0, symName: _player_hit, symObjAddr: 0x96C, symBinAddr: 0x100002F1C, symSize: 0xD4 }
-  - { offsetInCU: 0x459, offset: 0x459, size: 0x8, addend: 0x0, symName: _show_players_buttons, symObjAddr: 0xA40, symBinAddr: 0x100002FF0, symSize: 0x90 }
-  - { offsetInCU: 0x48E, offset: 0x48E, size: 0x8, addend: 0x0, symName: _start_croupier_play, symObjAddr: 0xAD0, symBinAddr: 0x100003080, symSize: 0x90 }
-  - { offsetInCU: 0x4C0, offset: 0x4C0, size: 0x8, addend: 0x0, symName: _start_clients, symObjAddr: 0xB60, symBinAddr: 0x100003110, symSize: 0x158 }
-  - { offsetInCU: 0x500, offset: 0x500, size: 0x8, addend: 0x0, symName: _get_first_players_cards, symObjAddr: 0xCB8, symBinAddr: 0x100003268, symSize: 0x4 }
-  - { offsetInCU: 0x515, offset: 0x515, size: 0x8, addend: 0x0, symName: _unready_to_play_hand_players, symObjAddr: 0xCBC, symBinAddr: 0x10000326C, symSize: 0x8C }
-  - { offsetInCU: 0x547, offset: 0x547, size: 0x8, addend: 0x0, symName: _croupier_hit, symObjAddr: 0xD48, symBinAddr: 0x1000032F8, symSize: 0x8C }
-  - { offsetInCU: 0x56D, offset: 0x56D, size: 0x8, addend: 0x0, symName: _get_random_card, symObjAddr: 0xDD4, symBinAddr: 0x100003384, symSize: 0x58 }
-  - { offsetInCU: 0x5A6, offset: 0x5A6, size: 0x8, addend: 0x0, symName: _check_ready_to_play_hand_of_players, symObjAddr: 0xE2C, symBinAddr: 0x1000033DC, symSize: 0xD0 }
-  - { offsetInCU: 0x5ED, offset: 0x5ED, size: 0x8, addend: 0x0, symName: _check_ready_of_players, symObjAddr: 0xEFC, symBinAddr: 0x1000034AC, symSize: 0xD0 }
-  - { offsetInCU: 0x634, offset: 0x634, size: 0x8, addend: 0x0, symName: _create_shared_memory, symObjAddr: 0xFCC, symBinAddr: 0x10000357C, symSize: 0x1C4 }
-  - { offsetInCU: 0x67B, offset: 0x67B, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x1190, symBinAddr: 0x100003740, symSize: 0x360 }
-  - { offsetInCU: 0x758, offset: 0x758, size: 0x8, addend: 0x0, symName: __OSSwapInt16, symObjAddr: 0x14F0, symBinAddr: 0x100003AA0, symSize: 0x24 }
+  - { offsetInCU: 0x2D0, offset: 0x2D0, size: 0x8, addend: 0x0, symName: _handle_sigchld, symObjAddr: 0x0, symBinAddr: 0x100002360, symSize: 0x44 }
+  - { offsetInCU: 0x2F4, offset: 0x2F4, size: 0x8, addend: 0x0, symName: _handle_client, symObjAddr: 0x44, symBinAddr: 0x1000023A4, symSize: 0x7D8 }
+  - { offsetInCU: 0x3A0, offset: 0x3A0, size: 0x8, addend: 0x0, symName: _broadcast_message, symObjAddr: 0x81C, symBinAddr: 0x100002B7C, symSize: 0xE4 }
+  - { offsetInCU: 0x3E3, offset: 0x3E3, size: 0x8, addend: 0x0, symName: _hide_players_buttons, symObjAddr: 0x900, symBinAddr: 0x100002C60, symSize: 0x90 }
+  - { offsetInCU: 0x416, offset: 0x416, size: 0x8, addend: 0x0, symName: _player_hit, symObjAddr: 0x990, symBinAddr: 0x100002CF0, symSize: 0xD4 }
+  - { offsetInCU: 0x45A, offset: 0x45A, size: 0x8, addend: 0x0, symName: _show_players_buttons, symObjAddr: 0xA64, symBinAddr: 0x100002DC4, symSize: 0x90 }
+  - { offsetInCU: 0x48F, offset: 0x48F, size: 0x8, addend: 0x0, symName: _start_croupier_play, symObjAddr: 0xAF4, symBinAddr: 0x100002E54, symSize: 0x90 }
+  - { offsetInCU: 0x4C1, offset: 0x4C1, size: 0x8, addend: 0x0, symName: _start_clients, symObjAddr: 0xB84, symBinAddr: 0x100002EE4, symSize: 0x158 }
+  - { offsetInCU: 0x501, offset: 0x501, size: 0x8, addend: 0x0, symName: _get_first_players_cards, symObjAddr: 0xCDC, symBinAddr: 0x10000303C, symSize: 0x4 }
+  - { offsetInCU: 0x516, offset: 0x516, size: 0x8, addend: 0x0, symName: _unready_to_play_hand_players, symObjAddr: 0xCE0, symBinAddr: 0x100003040, symSize: 0x8C }
+  - { offsetInCU: 0x548, offset: 0x548, size: 0x8, addend: 0x0, symName: _croupier_hit, symObjAddr: 0xD6C, symBinAddr: 0x1000030CC, symSize: 0x8C }
+  - { offsetInCU: 0x56E, offset: 0x56E, size: 0x8, addend: 0x0, symName: _get_random_card, symObjAddr: 0xDF8, symBinAddr: 0x100003158, symSize: 0x58 }
+  - { offsetInCU: 0x5A7, offset: 0x5A7, size: 0x8, addend: 0x0, symName: _check_ready_to_play_hand_of_players, symObjAddr: 0xE50, symBinAddr: 0x1000031B0, symSize: 0xD0 }
+  - { offsetInCU: 0x5EE, offset: 0x5EE, size: 0x8, addend: 0x0, symName: _check_ready_of_players, symObjAddr: 0xF20, symBinAddr: 0x100003280, symSize: 0xD0 }
+  - { offsetInCU: 0x635, offset: 0x635, size: 0x8, addend: 0x0, symName: _create_shared_memory, symObjAddr: 0xFF0, symBinAddr: 0x100003350, symSize: 0x1C4 }
+  - { offsetInCU: 0x67C, offset: 0x67C, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x11B4, symBinAddr: 0x100003514, symSize: 0x4E0 }
+  - { offsetInCU: 0x78B, offset: 0x78B, size: 0x8, addend: 0x0, symName: __OSSwapInt16, symObjAddr: 0x1694, symBinAddr: 0x1000039F4, symSize: 0x24 }
 ...
