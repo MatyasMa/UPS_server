@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/Users/matyasmasek/Desktop/ups/UPS_server/build",
+  "command": "/usr/bin/clang   -Wall -Wextra -pedantic -ansi -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -o CMakeFiles/server.dir/server.c.o -c /Users/matyasmasek/Desktop/ups/UPS_server/server.c",
+  "file": "/Users/matyasmasek/Desktop/ups/UPS_server/server.c",
+  "output": "CMakeFiles/server.dir/server.c.o"
+}
+]

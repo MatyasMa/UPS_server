@@ -85,10 +85,16 @@ void* handle_client(void* arg) {
 
             if (check_ready_to_play_hand_of_players()) {
                 // TODO: send croupier card and players cards
+                
+
+            
                 // get first card for croupier and send message for players to ask for cards
                 broadcast_message("ask_for_first_cards;");
+                pthread_mutex_lock(&players_mutex);
+                sleep(1);
                 croupier_hit();
                 players[0].can_play = 1;
+                pthread_mutex_unlock(&players_mutex);
             }
 
         } else if (!strcmp(buffer, "get_first_cards")) {
