@@ -16,6 +16,7 @@
 #define PORT 8080
 
 // Shared memory segment for player data
+int shmid; 
 struct player *players;
 int all_players_ready;
 int players_count = 0;
@@ -23,6 +24,7 @@ pthread_mutex_t players_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 int current_player_id = 0;
+int evaluation_end = 0;
 
 // Signal handler to reap zombie processes
 void handle_sigchld(int sig) {
@@ -71,8 +73,24 @@ void* handle_client(void* arg) {
 
             if (check_ready_of_players()) {
                 start_clients();
+                printf("nejsou ready\n");
                 // broadcast_message("start_game\n");
             }
+
+
+        } else if (!strncmp(buffer, "unready:", 8)) {
+            char nick[50];
+            if (sscanf(buffer, "unready:%s", &nick) == 1) {
+                players[player_id].nickname = "null";
+            }
+            printf("Client %d - %s is NOT ready\n", players[player_id].id, players[player_id].nickname);
+            players[player_id].is_ready = 0;
+
+            // Echo the message back to the client
+            char mess[256];
+            // TODO: smazat - zbytečný send
+            sprintf(mess, "UNREADY uživatele %d bylo přijmuto\n", players[player_id].id);
+            send(players[player_id].socket_fd, mess, strlen(mess), 0);
 
         } else if (!strcmp(buffer, "exit")) {
             printf("Client %d requested exit.\n", players[player_id].id);
@@ -86,8 +104,6 @@ void* handle_client(void* arg) {
             if (check_ready_to_play_hand_of_players()) {
                 // TODO: send croupier card and players cards
                 
-
-            
                 // get first card for croupier and send message for players to ask for cards
                 broadcast_message("ask_for_first_cards;");
                 pthread_mutex_lock(&players_mutex);
@@ -98,7 +114,7 @@ void* handle_client(void* arg) {
             }
 
         } else if (!strcmp(buffer, "get_first_cards")) {
-
+            
 
             hide_players_buttons(player_id);
 
@@ -118,6 +134,8 @@ void* handle_client(void* arg) {
                 current_player_id = 0;
                 show_players_buttons(0);
             }
+
+            
             
         } else if (!strcmp(buffer, "player_get_hit")) {
 
@@ -129,6 +147,8 @@ void* handle_client(void* arg) {
 
             
         } else if (!strncmp(buffer, "player_stand:", 13)) {
+
+            ++players[player_id].hands_played;
             // player_stand:C ... continue
             // player_stand:L ... lost
             char result;
@@ -136,8 +156,11 @@ void* handle_client(void* arg) {
             if (sscanf(buffer, "player_stand:%c", &result) == 1) {
                 if (result == 'L') {
                     players[player_id].loses_hand = 1;
+                    printf("hrac %d prohral: to many\n",player_id);
+                } else {
+                    printf("hrac %d stand:\n",player_id);
                 }
-                printf("hrac %d prohral: to many\n",player_id);
+                
             } else {
                 printf("Failed to extract character.\n");
             }
@@ -151,10 +174,10 @@ void* handle_client(void* arg) {
             } else if (player_id == 1) {
                 players[1].can_play = 0;
                 hide_players_buttons(1);
-
+                
                 // TODO: udělané natvrdo, chtělo by obecně
                 if (players[0].loses_hand && players[1].loses_hand) {
-                    broadcast_message("hand_ended");
+                    broadcast_message("hand_ended_for_all");
                 } else {
                     // Posílám libovolném uživateli
                     start_croupier_play(1);
@@ -165,63 +188,85 @@ void* handle_client(void* arg) {
             croupier_hit();
             // sleep(1);
             // pthread_mutex_unlock(&players_mutex);
+        } else if (!strcmp(buffer, "croupier_play_end")) {
+            broadcast_message("hand_ended_for_all");
         } else if (!strcmp(buffer, "hand_end")) {
-            unready_to_play_hand_players();
-        } 
-        // else if (!strcmp(buffer, "game_over")) {
-
-        //     // TODO: nefunguje
-        //     players[player_id].loses_game = 1;
-
-
-        //     if ((player_id == 0 && players[1].loses_game) || (player_id == 1 && players[0].loses_game)) {
-        //         broadcast_message("lose");
-        //     } else {
-        //         if (send(players[player_id].socket_fd, "lose", strlen("lose"), 0) < 0) {
-        //             perror("send failed");
-        //         }
-        //         int winner = player_id == 1 ? 0 : 1;
-        //         if (send(players[winner].socket_fd, "win", strlen("win"), 0) < 0) {
-        //             perror("send failed");
-        //         }
-        //     }
-
-        //     printf("starting new game\n");
             
-        //     // TODO: new game
-        // } else if (!strcmp(buffer, "game_win")) {
+            if (players[0].hands_played == MAX_HANDS_PLAY || players[1].hands_played == MAX_HANDS_PLAY) {
 
-        //     // TODO: nefunguje
-        //     // TODO: broadcast, to close and start new game - new window
-        //     players[player_id].win_game = 1;
+                while (!(players[0].hands_played == MAX_HANDS_PLAY && players[1].hands_played == MAX_HANDS_PLAY)) {
+                    sleep(1);
+                    printf("čekám\n");
+                }
 
-        //     if ((player_id == 0 && players[1].win_game) || (player_id == 1 && players[0].win_game)) {
-        //         broadcast_message("draw");
-        //     } else {
-        //         if (send(players[player_id].socket_fd, "win", strlen("win"), 0) < 0) {
-        //             perror("send failed");
-        //         }
-        //         int loser = player_id == 1 ? 0 : 1;
-        //         if (send(players[loser].socket_fd, "lose", strlen("lose"), 0) < 0) {
-        //             perror("send failed");
-        //         }
-        //     }
+                if (player_id == 1) {
+                    broadcast_message("game_over");
+                }                
+            }
+            
+            unready_to_play_hand_players();
+        } else if (!strncmp(buffer, "balance:", 8)) {
+            int result;
+            // Parsování znaku po "player_stand:"
+            if (sscanf(buffer, "balance:%d", &result) == 1) {
+                players[player_id].balance = result;
+            }
 
-        //     printf("starting new game\n");
+            pthread_mutex_lock(&players_mutex);
+            while ((player_id == 0 && players[1].balance < 0) || (player_id == 1 && players[0].balance < 0)) {
+                pthread_cond_wait(&cond, &players_mutex);
+            }
 
-        //     // TODO: new game
-        // }
-
-        
+            pthread_cond_signal(&cond);
+            if (player_id == 1) {
+                char message1[50]; 
+                char message2[50]; 
+                if (players[0].balance < players[1].balance) {                    
+                    sprintf(message1, "win:%d_%d", players[1].balance, players[0].balance); 
+                    sprintf(message2, "lose:%d_%d", players[0].balance, players[1].balance); 
+                    send_message_to_player(1, message1);
+                    send_message_to_player(0, message2);
+                } else if (players[1].balance < players[0].balance) {
+                    sprintf(message1, "win:%d_%d", players[0].balance, players[1].balance); 
+                    sprintf(message2, "lose:%d_%d", players[1].balance, players[0].balance); 
+                    send_message_to_player(0, message1);
+                    send_message_to_player(1, message2);
+                } else {
+                    sprintf(message1, "draw:%d", players[0].balance); 
+                    broadcast_message(message1);
+                }
+ 
+                clear_players_data();
+            } 
+            
+            pthread_mutex_unlock(&players_mutex);
+        }
+ 
     }
 }
 
+// kromě id
+void clear_players_data() {
+    for (int i = 0; i < MAX_PLAYERS; ++i) {
+        players[i].is_ready = 0;
+        players[i].is_ready_to_play_hand = 0;
+        players[i].can_play = 0;
+        players[i].hands_played = 0;
+        players[i].balance = -1;
+    }
+}
+
+void send_message_to_player(int id_player, const char *message) {
+    if (send(players[id_player].socket_fd, message, strlen(message), 0) < 0) {
+        perror("send failed");
+    }
+}
 
 void start_clients() {
-    char message[50]; // Allocate a fixed-size buffer
+    char message[100]; // Allocate a fixed-size buffer
     for (int i = 0; i < MAX_PLAYERS; ++i) {
         if (players[i].id) { // If the player exists and has a valid id
-            sprintf(message, "start_game:%d;", players[i].id); // Format the message
+            sprintf(message, "start_game:%d_%s_%s;", players[i].id, players[0].nickname, players[1].nickname); // Format the message
             if (send(players[i].socket_fd, message, strlen(message), 0) < 0) {
                 perror("send failed");
             }
@@ -341,12 +386,28 @@ void broadcast_message(const char *message) {
 }
 
 int create_shared_memory() {
-    // Dynamicky alokujeme paměť pro pole hráčů
-    players = (struct player *)malloc(sizeof(struct player) * MAX_PLAYERS);
-    if (players == NULL) {
-        perror("malloc failed");
+    // // Dynamicky alokujeme paměť pro pole hráčů
+    // players = (struct player *)malloc(sizeof(struct player) * MAX_PLAYERS);
+    // if (players == NULL) {
+    //     perror("malloc failed");
+    //     return -1;
+    // }
+
+    shmid = shmget(IPC_PRIVATE, sizeof(struct player) * MAX_PLAYERS, IPC_CREAT | 0666); 
+    if (shmid == -1) {
+        perror("shmget failed");
         return -1;
     }
+
+    // Attach the shared memory segment
+    players = (struct player *)shmat(shmid, NULL, 0); 
+    if (players == (void *)-1) {
+        perror("shmat failed");
+        return -1;
+    }
+
+
+
 
     // Inicializace hráčských dat
     for (int i = 0; i < MAX_PLAYERS; ++i) {
@@ -362,6 +423,8 @@ int create_shared_memory() {
         }
         players[i].loses_game = -1;
         players[i].win_game = -1;
+        players[i].hands_played = 0;
+        players[i].balance = -1;
     }
 
     return 0;
