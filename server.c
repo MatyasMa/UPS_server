@@ -201,10 +201,12 @@ void* handle_client(void* arg) {
 
                 if (player_id == 1) {
                     broadcast_message("game_over");
-                }                
+                }
             }
             
             unready_to_play_hand_players();
+        } else if (!strcmp(buffer, "send_game_over")) {
+            broadcast_message("game_over");
         } else if (!strncmp(buffer, "balance:", 8)) {
             int result;
             // Parsování znaku po "player_stand:"
@@ -213,12 +215,20 @@ void* handle_client(void* arg) {
             }
 
             pthread_mutex_lock(&players_mutex);
-            while ((player_id == 0 && players[1].balance < 0) || (player_id == 1 && players[0].balance < 0)) {
+            if (player_id == 1) {
+
+            while (players[0].balance < 0) {
                 pthread_cond_wait(&cond, &players_mutex);
+                printf("čekám");
             }
 
-            pthread_cond_signal(&cond);
-            if (player_id == 1) {
+            // while ((player_id == 0 && players[1].balance < 0) || (player_id == 1 && players[0].balance < 0)) {
+            //     pthread_cond_wait(&cond, &players_mutex);
+            //     printf("čekám");
+            // }
+
+            // pthread_cond_signal(&cond);
+            
                 char message1[50]; 
                 char message2[50]; 
                 if (players[0].balance < players[1].balance) {                    

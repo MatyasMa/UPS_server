@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -ansi -g
+CFLAGS = -Wall -Wextra -pedantic -g
 SOURCES = server.c
 HEADERS = 
 TARGET = server
