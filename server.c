@@ -1,43 +1,25 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <signal.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/wait.h>
-#include <pthread.h>
+
 
 #include "server.h"
+#include "game_control.h"
+#include "players.h"
+#include "sender.h"
+
 
 #define PORT 8080
 
-// Shared memory segment for player data
-int shmid; 
-struct player *players;
-int all_players_ready;
 int players_count = 0;
-pthread_mutex_t players_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 int current_player_id = 0;
-int evaluation_end = 0;
 
-// Signal handler to reap zombie processes
-void handle_sigchld(int sig) {
-    while (waitpid(-1, NULL, WNOHANG) > 0)
-        ;
-}
 
 // Handle client interaction
 void* handle_client(void* arg) {
     int player_id = *(int*)arg;
     char buffer[1024] = {0};
     int bytes_read;
-    int i;
 
     free(arg);  // Free the dynamically allocated player_id memory
 
@@ -59,8 +41,12 @@ void* handle_client(void* arg) {
         printf("buffer: %s\n",buffer);
 
         if (!strncmp(buffer, "ready:", 6)) {
-            char nick[50];
-            if (sscanf(buffer, "ready:%s", &nick) == 1) {
+            char *nick;
+            nick = malloc(50 * sizeof(char));
+            if (!nick) {
+                exit(EXIT_FAILURE);
+            }
+            if (sscanf(buffer, "ready:%s", nick) == 1) {
                 players[player_id].nickname = nick;
             }
             printf("Client %d - %s is ready\n", players[player_id].id, players[player_id].nickname);
@@ -79,8 +65,12 @@ void* handle_client(void* arg) {
 
 
         } else if (!strncmp(buffer, "unready:", 8)) {
-            char nick[50];
-            if (sscanf(buffer, "unready:%s", &nick) == 1) {
+            char *nick;
+            nick = malloc(50 * sizeof(char));
+            if (!nick) {
+                exit(EXIT_FAILURE);
+            }
+            if (sscanf(buffer, "unready:%s", nick) == 1) {
                 players[player_id].nickname = "null";
             }
             printf("Client %d - %s is NOT ready\n", players[player_id].id, players[player_id].nickname);
@@ -255,24 +245,10 @@ void* handle_client(void* arg) {
     }
 }
 
-// kromě id
-void clear_players_data() {
-    for (int i = 0; i < MAX_PLAYERS; ++i) {
-        players[i].is_ready = 0;
-        players[i].is_ready_to_play_hand = 0;
-        players[i].can_play = 0;
-        players[i].hands_played = 0;
-        players[i].balance = -1;
-    }
-}
 
-void send_message_to_player(int id_player, const char *message) {
-    if (send(players[id_player].socket_fd, message, strlen(message), 0) < 0) {
-        perror("send failed");
-    }
-}
 
-void start_clients() {
+
+void start_clients(void) {
     char message[100]; // Allocate a fixed-size buffer
     for (int i = 0; i < MAX_PLAYERS; ++i) {
         if (players[i].id) { // If the player exists and has a valid id
@@ -284,146 +260,10 @@ void start_clients() {
     }
 }
 
-
-void unready_to_play_hand_players() {
-    for (int i = 0; i < MAX_PLAYERS; ++i) {
-        players[i].has_first_cards = 0;
-        players[i].is_ready_to_play_hand = 0;
-        players[i].loses_hand = 0;
-    }
-}
-
-void start_croupier_play(int player_id) {
-    char *message = "start_croupier_play;";
-    if (send(players[player_id].socket_fd, message, strlen(message), 0) < 0) {
-        perror("send failed");
-    }
-}
-
-void hide_players_buttons(int player_id) {
-    char *message = "hide_play_buttons;";
-    if (send(players[player_id].socket_fd, message, strlen(message), 0) < 0) {
-        perror("send failed");
-    }
-}
-
-void show_players_buttons(int player_id) {
-    char *message = "show_play_buttons;";
-    if (send(players[player_id].socket_fd, message, strlen(message), 0) < 0) {
-        perror("send failed");
-    }
-}
-
-void player_hit(int player_id) {
-    pthread_mutex_lock(&players_mutex);
-    
-    sleep(1);
-    char mess[20];
-    char random_card = get_random_card();
-    // sprintf(mess, "player_hit:%c_%c;", player_id + 1, random_card);
-    sprintf(mess, "player_hit:%d_%c;", (player_id + 1), random_card);
-    // sprintf(mess, mess, random_card);
-    printf("odesílám zprávu hitnutí: %s\n", mess);
-
-    broadcast_message(mess);
-    // if (send(players[player_id].socket_fd, mess, strlen(mess), 0) < 0) {
-    //     perror("send failed");
-    // }
-
-    pthread_mutex_unlock(&players_mutex);
-}
-
-void croupier_hit() {
-    sleep(1);
-    char mess[20];
-    sprintf(mess, "croupier_hit:%c;", get_random_card());
-    broadcast_message(mess);
-}
-
-char get_random_card() {
-
-    // Řetězec obsahující možné hodnoty karet
-    const char *values = "23456789TJQKA";
-    srand(time(0));
-    int random_id = rand() % 12 + 1;
-
-    // Vrácení náhodného znaku (hodnoty karty)
-    return values[random_id];
-    
-}
-
-int check_ready_to_play_hand_of_players() {
-    int all_ready_to_play_hand = 1;
-    pthread_mutex_lock(&players_mutex);
-
-        for (int i = 0; i < MAX_PLAYERS; ++i) {
-            if (!players[i].id || !players[i].is_ready_to_play_hand) {
-                all_ready_to_play_hand = 0;
-            }
-        }
-
-    pthread_mutex_unlock(&players_mutex);
-    return all_ready_to_play_hand;
-}
-
-int check_ready_of_players() {
-    int all_ready = 1;
-    pthread_mutex_lock(&players_mutex);
-        for (int i = 0; i < MAX_PLAYERS; ++i) {
-            if (!players[i].id || !players[i].is_ready) {
-                all_ready = 0;
-            }
-        }
-    pthread_mutex_unlock(&players_mutex);
-    return all_ready;
-}
-
-void broadcast_message(const char *message) {
-    for (int i = 0; i < MAX_PLAYERS; ++i) {
-        if (players[i].id) {  // If the player exists and has a valid socket_fd
-            if (send(players[i].socket_fd, message, strlen(message), 0) < 0) {
-                perror("send failed");
-            }
-        }
-    }
-}
-
-int create_shared_memory() {
-    shmid = shmget(IPC_PRIVATE, sizeof(struct player) * MAX_PLAYERS, IPC_CREAT | 0666); 
-    if (shmid == -1) {
-        perror("shmget failed");
-        return -1;
-    }
-
-    // Attach the shared memory segment
-    players = (struct player *)shmat(shmid, NULL, 0); 
-    if (players == (void *)-1) {
-        perror("shmat failed");
-        return -1;
-    }
-
-
-
-
-    // Inicializace hráčských dat
-    for (int i = 0; i < MAX_PLAYERS; ++i) {
-        players[i].id = 0;
-        players[i].is_ready = 0;
-        players[i].is_ready_to_play_hand = 0;
-        players[i].can_play = 0;
-        players[i].nickname = malloc(50 * sizeof(char));
-        if (!players[i].nickname) {
-            perror("malloc failed for nickname");
-            free(players);  // Uvolnění již alokované paměti
-            return -1;
-        }
-        players[i].loses_game = -1;
-        players[i].win_game = -1;
-        players[i].hands_played = 0;
-        players[i].balance = -1;
-    }
-
-    return 0;
+// Signal handler to reap zombie processes
+void handle_sigchld(void) {
+    while (waitpid(-1, NULL, WNOHANG) > 0)
+        ;
 }
 
 
@@ -456,7 +296,7 @@ int main(int argc, char *argv[]) {
     int addrlen = sizeof(address);
 
     // Set up signal handler to reap zombie processes
-    signal(SIGCHLD, handle_sigchld);
+    signal(SIGCHLD, (void (*) (int)) (handle_sigchld));
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
@@ -543,4 +383,6 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+
+
 

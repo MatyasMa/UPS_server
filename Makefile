@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -pedantic -g
-SOURCES = server.c
-HEADERS = 
+SOURCES = game_control.c players.c sender.c server.c
+HEADERS = game_control.h players.h sender.h server.h
 TARGET = server
 
 all: $(TARGET)
