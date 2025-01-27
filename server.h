@@ -28,6 +28,7 @@ struct player {
     int loses_hand;
     int hands_played;
     int balance;
+    int is_connected;
     pthread_t thread;
 };
 
@@ -35,28 +36,22 @@ extern pthread_mutex_t players_mutex;
 extern struct player *players;
 
 
-// int create_shared_memory();
-// /**
-//  * @brief Ready to play game
-//  * 
-//  * @return int 
-//  */
-// int check_ready_of_players();
-// int check_ready_to_play_hand_of_players();
-// void broadcast_message(const char *message);
+#define KEEP_ALIVE_INTERVAL 5       // Interval pro odesílání keep-alive zpráv (v sekundách)
+#define KEEP_ALIVE_TIMEOUT 40       // Časový limit pro detekci výpadku (v sekundách)
+struct client_status {
+    int last_response_time;
+    int is_connected;
+};
+extern struct client_status client_status[];
 
-// void player_hit(int player_id);
-// void croupier_hit();
-// char get_random_card();
-// void hide_players_buttons(int player_id);
-// void show_players_buttons(int player_id);
-// void start_croupier_play(int player_id);
-// void unready_to_play_hand_players();
-// void send_message_to_player(int id_player, const char *message);
-// void clear_players_data();
+
 
 void* handle_client(void* arg);
 void start_clients(void);
 void handle_sigchld(void);
+
+void handle_disconnect(int player_id);
+
+void get_first_cards(int player_id);
 
 #endif

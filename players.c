@@ -8,7 +8,7 @@ pthread_mutex_t players_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct player *players;
 
 int create_shared_memory(void) {
-    shmid = shmget(IPC_PRIVATE, sizeof(struct player) * MAX_PLAYERS, IPC_CREAT | 0666); 
+    shmid = shmget(IPC_PRIVATE, sizeof(struct player) * (MAX_PLAYERS+1), IPC_CREAT | 0666); 
     if (shmid == -1) {
         perror("shmget failed");
         return -1;
@@ -122,3 +122,12 @@ void clear_players_data(void) {
     }
 }
 
+int is_some_player_disconnected(void) {
+    int i;
+    for (i = 0; i < MAX_PLAYERS; ++i) {
+        if (!players[i].is_connected) {
+            return i;
+        }
+    }
+    return -1;
+}

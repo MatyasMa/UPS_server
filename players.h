@@ -9,6 +9,7 @@ void hide_players_buttons(int player_id);
 void show_players_buttons(int player_id);
 void unready_to_play_hand_players(void);
 void clear_players_data(void);
+int is_some_player_disconnected(void);
 
 
 #endif
