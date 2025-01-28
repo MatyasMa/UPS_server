@@ -104,7 +104,7 @@ void handle_disconnect(int player_id) {
     players[2] = players[player_id];
     
 
-    --players_count;
+    players_count -= 1;
 
     client_status[player_id].is_connected = 0;
 
