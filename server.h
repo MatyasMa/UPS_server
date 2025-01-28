@@ -37,7 +37,7 @@ extern struct player *players;
 
 
 #define KEEP_ALIVE_INTERVAL 5       // Interval pro odesílání keep-alive zpráv (v sekundách)
-#define KEEP_ALIVE_TIMEOUT 40       // Časový limit pro detekci výpadku (v sekundách)
+#define KEEP_ALIVE_TIMEOUT 120       // Časový limit pro detekci výpadku (v sekundách)
 struct client_status {
     int last_response_time;
     int is_connected;

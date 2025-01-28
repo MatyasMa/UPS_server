@@ -17,29 +17,34 @@ int current_player_id = 0;
 struct client_status client_status[MAX_PLAYERS];
 
 
-// void* keep_alive_thread(void* arg) {
-//     while (1) {
-//         sleep(KEEP_ALIVE_INTERVAL);
-//         for (int i = 0; i < MAX_PLAYERS; ++i) {
-//             if (players[i].is_connected) {
-//                 // Odešle keep-alive zprávu
-//                 if (send(players[i].socket_fd, "keep-alive", strlen("keep-alive"), 0) < 0) {
-//                     perror("Keep-alive send failed");
-//                 }
+void* keep_alive_thread(void* arg) {
+    while (1) {
+        sleep(KEEP_ALIVE_INTERVAL);
+        if (check_ready_of_players()) {
+            for (int i = 0; i < MAX_PLAYERS; ++i) {
+                if (players[i].is_connected == 1) {
+                    // Send ping message
+                    printf("Sending ping for client %d\n", players[i].id - 1);
+                    if (send(players[i].socket_fd, "ping;", strlen("ping;"), 0) < 0) {
+                        perror("Ping send failed");
+                        handle_disconnect(i);
+                        continue;
+                    }
 
-//                 // Kontrola odpovědi
-//                 if (time(NULL) - client_status[i].last_response_time > KEEP_ALIVE_TIMEOUT) {
-//                     printf("Client %d timeout\n", i);
-//                     handle_disconnect(i);
-//                 }
-//             }
-//         }
-//     }
-//     return NULL;
-// }
+                    // Check for pong response
+                    if (time(NULL) - client_status[i].last_response_time > KEEP_ALIVE_TIMEOUT) {
+                        printf("Client %d timeout\n", i);
+                        handle_disconnect(i);
+                    }
+                }
+            }
+        }        
+    }
+    return NULL;
+}
 
 void handle_disconnect(int player_id) {
-    printf("Player %d disconnected\n", player_id + 1);
+    printf("Client %d disconnected\n", player_id);
 
     int id_player_to_send = 0;
     if (player_id == 0) {
@@ -47,9 +52,9 @@ void handle_disconnect(int player_id) {
     }
 
     char message[256];
-    snprintf(message, sizeof(message), "disconnected:%d", player_id);
+    snprintf(message, sizeof(message), "disconnected:%d;", player_id);
     broadcast_message(message);
-    send_message_to_player(id_player_to_send, players[player_id].nickname);
+    // send_message_to_player(id_player_to_send, players[player_id].nickname);
 
     players[player_id].is_connected = 0;
     players[2] = players[player_id];
@@ -88,10 +93,13 @@ void* handle_client(void* arg) {
 
     free(arg);  // Free the dynamically allocated player_id memory
 
+    int keep_alive_counter = 0;
+
     while (1) {
         memset(buffer, 0, sizeof(buffer)); // Clear buffer
         printf("Waiting for message from client %d...\n", players[player_id].id);
         bytes_read = recv(players[player_id].socket_fd, buffer, sizeof(buffer), 0);
+        client_status[player_id].last_response_time = time(NULL);
 
         if (bytes_read <= 0) {
             // Client disconnected or error
@@ -101,13 +109,15 @@ void* handle_client(void* arg) {
 
             close(players[player_id].socket_fd);
             pthread_exit(NULL);  // Properly exit the thread
-            // TODO: return;
         }
 
         buffer[bytes_read] = '\0';
         printf("buffer: %s\n",buffer);
 
-        if (!strncmp(buffer, "reconnected", 10)) {
+
+        if (!strncmp(buffer, "pong", 4)) {        
+            printf("%d: Client %d is alive\n", keep_alive_counter++, player_id);
+        } else if (!strncmp(buffer, "reconnected", 10)) {
             char *nick;
             nick = malloc(50 * sizeof(char));
             if (!nick) {
@@ -405,6 +415,12 @@ int main(int argc, char *argv[]) {
 
     // Create shared memory for players
     if (create_shared_memory() == -1) {
+        exit(EXIT_FAILURE);
+    }
+
+    pthread_t keep_alive_tid;
+    if (pthread_create(&keep_alive_tid, NULL, keep_alive_thread, NULL) != 0) {
+        perror("pthread_create for keep-alive failed");
         exit(EXIT_FAILURE);
     }
 
