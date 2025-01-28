@@ -37,10 +37,7 @@ void* keep_alive_thread(void* arg) {
                 
                 // Výpis informací před podmínkou
                 printf("Checking timeout for client %d:\n", player_id);
-                printf("  Current time: %ld\n", time(NULL));
-                printf("  Last response time: %ld\n", client_status[player_id].last_response_time);
-                printf("  KEEP_ALIVE_TIMEOUT: %d\n", KEEP_ALIVE_TIMEOUT);
-                printf("  Difference: %ld\n", time(NULL) - client_status[player_id].last_response_time);
+                printf("  Čekal sekund: %ld\n", time(NULL) - client_status[player_id].last_response_time);
 
                 // Check for pong response
                 if (time(NULL) - client_status[player_id].last_response_time > KEEP_ALIVE_TIMEOUT) {
@@ -157,7 +154,7 @@ void* handle_client(void* arg) {
 
     while (1) {
         memset(buffer, 0, sizeof(buffer)); // Clear buffer
-        printf("Waiting for message from client %d...\n", players[player_id].id);
+        printf("Waiting for message from client %d...\n", player_id);
         bytes_read = recv(players[player_id].socket_fd, buffer, sizeof(buffer), 0);
         client_status[player_id].last_response_time = time(NULL);
 
@@ -497,6 +494,7 @@ int main(int argc, char *argv[]) {
 
             if (players_count == MAX_PLAYERS) {
                 disconnected_player_id = is_some_player_disconnected();
+                printf("existuje uživatel bez připojení., id: %d\n",disconnected_player_id);
             } else {
                 disconnected_player_id = -1;
             }
@@ -512,7 +510,7 @@ int main(int argc, char *argv[]) {
             
 
             printf("Client connected: %s:%d\n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
-            printf("Client %d connected with socket_fd %d.\n", players[players_count].id, client_socket);
+            printf("Client %d connected with socket_fd %d.\n", current_player_id, client_socket);
 
             // Create unique player ID to pass to the thread
             int *player_id = malloc(sizeof(int));
@@ -531,7 +529,13 @@ int main(int argc, char *argv[]) {
             }
 
             // TODO: přepíše původní thread id ?
-            players[players_count].thread = thread_id;
+            if (disconnected_player_id == -1) {
+                players[players_count].thread = thread_id;
+            } else {
+                players[disconnected_player_id].thread = thread_id;
+            }
+            
+            // players[players_count].thread = thread_id;
 
             // Increment player count
             players_count++;
