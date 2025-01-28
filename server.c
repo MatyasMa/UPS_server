@@ -493,8 +493,6 @@ int main(int argc, char *argv[]) {
             int disconnected_player_id = 0;
 
             disconnected_player_id = is_some_player_disconnected();
-            printf("existuje uživatel bez připojení., id: %d\n",disconnected_player_id);
-
 
             if (disconnected_player_id == -1) {
                 players[players_count].id = players_count + 1;

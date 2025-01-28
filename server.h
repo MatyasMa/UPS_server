@@ -37,8 +37,8 @@ extern pthread_mutex_t players_mutex;
 extern struct player *players;
 
 
-#define KEEP_ALIVE_INTERVAL 5       // Interval pro odesílání keep-alive zpráv (v sekundách)
-#define KEEP_ALIVE_TIMEOUT 10       // Časový limit pro detekci výpadku (v sekundách)
+#define KEEP_ALIVE_INTERVAL 1       // Interval pro odesílání keep-alive zpráv (v sekundách)
+#define KEEP_ALIVE_TIMEOUT 5       // Časový limit pro detekci výpadku (v sekundách)
 #define TRY_RECONNECT_TIME 120
 struct client_status {
     int last_response_time;
