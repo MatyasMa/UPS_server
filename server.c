@@ -18,37 +18,70 @@ struct client_status client_status[MAX_PLAYERS];
 
 
 void* keep_alive_thread(void* arg) {
+    int player_id = *(int*)arg;
     while (1) {
         sleep(KEEP_ALIVE_INTERVAL);
         if (check_ready_of_players()) {
-            for (int i = 0; i < MAX_PLAYERS; ++i) {
-                if (players[i].is_connected == 1) {
-                    // Send ping message
-                    printf("\nSending ping for client %d\n", players[i].id - 1);
-                    if (send(players[i].socket_fd, "ping;", strlen("ping;"), 0) < 0) {
-                        perror("Ping send failed");
-                        handle_disconnect(i);
-                        continue;
-                    }
-
-                    
-                    // Výpis informací před podmínkou
-                    printf("Checking timeout for client %d:\n", i);
-                    printf("  Current time: %ld\n", time(NULL));
-                    printf("  Last response time: %ld\n", client_status[i].last_response_time);
-                    printf("  KEEP_ALIVE_TIMEOUT: %d\n", KEEP_ALIVE_TIMEOUT);
-                    printf("  Difference: %ld\n", time(NULL) - client_status[i].last_response_time);
-                    // Check for pong response
-                    if (time(NULL) - client_status[i].last_response_time > KEEP_ALIVE_TIMEOUT) {
-                        printf("Client %d timeout\n", i);
-                        handle_disconnect(i);
-                    }
+            if (players[player_id].is_connected == 1) {
+                // Send ping message
+                printf("\nSending ping for client %d\n", players[player_id].id - 1);
+                if (send(players[player_id].socket_fd, "ping;", strlen("ping;"), 0) < 0) {
+                    perror("Ping send failed");
+                    // handle_disconnect(i);
+                    continue;
                 }
-            }
-        }        
+
+                
+                // Výpis informací před podmínkou
+                printf("Checking timeout for client %d:\n", player_id);
+                printf("  Current time: %ld\n", time(NULL));
+                printf("  Last response time: %ld\n", client_status[player_id].last_response_time);
+                printf("  KEEP_ALIVE_TIMEOUT: %d\n", KEEP_ALIVE_TIMEOUT);
+                printf("  Difference: %ld\n", time(NULL) - client_status[player_id].last_response_time);
+                
+                // Check for pong response
+                if (time(NULL) - client_status[player_id].last_response_time > KEEP_ALIVE_TIMEOUT) {
+                    printf("Client %d timeout\n", player_id);
+                    handle_disconnect(player_id);
+                }
+            }            
+    }        
     }
     return NULL;
 }
+
+// void* keep_alive_thread(void* arg) {
+//     while (1) {
+//         sleep(KEEP_ALIVE_INTERVAL);
+//         if (check_ready_of_players()) {
+//             for (int i = 0; i < MAX_PLAYERS; ++i) {
+//                 if (players[i].is_connected == 1) {
+//                     // Send ping message
+//                     printf("\nSending ping for client %d\n", players[i].id - 1);
+//                     if (send(players[i].socket_fd, "ping;", strlen("ping;"), 0) < 0) {
+//                         perror("Ping send failed");
+//                         // handle_disconnect(i);
+//                         continue;
+//                     }
+
+                    
+//                     // Výpis informací před podmínkou
+//                     printf("Checking timeout for client %d:\n", i);
+//                     printf("  Current time: %ld\n", time(NULL));
+//                     printf("  Last response time: %ld\n", client_status[i].last_response_time);
+//                     printf("  KEEP_ALIVE_TIMEOUT: %d\n", KEEP_ALIVE_TIMEOUT);
+//                     printf("  Difference: %ld\n", time(NULL) - client_status[i].last_response_time);
+//                     // Check for pong response
+//                     if (time(NULL) - client_status[i].last_response_time > KEEP_ALIVE_TIMEOUT) {
+//                         printf("Client %d timeout\n", i);
+//                         handle_disconnect(i);
+//                     }
+//                 }
+//             }
+//         }        
+//     }
+//     return NULL;
+// }
 
 void handle_disconnect(int player_id) {
     printf("Client %d disconnected\n", player_id);
@@ -102,6 +135,12 @@ void* handle_client(void* arg) {
     free(arg);  // Free the dynamically allocated player_id memory
 
     int keep_alive_counter = 0;
+
+    pthread_t keep_alive_tid;
+    if (pthread_create(&keep_alive_tid, NULL, keep_alive_thread, (void *)player_id) != 0) {
+        perror("pthread_create for keep-alive failed");
+        exit(EXIT_FAILURE);
+    }
 
     while (1) {
         memset(buffer, 0, sizeof(buffer)); // Clear buffer
@@ -426,11 +465,11 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    pthread_t keep_alive_tid;
-    if (pthread_create(&keep_alive_tid, NULL, keep_alive_thread, NULL) != 0) {
-        perror("pthread_create for keep-alive failed");
-        exit(EXIT_FAILURE);
-    }
+    // pthread_t keep_alive_tid;
+    // if (pthread_create(&keep_alive_tid, NULL, keep_alive_thread, NULL) != 0) {
+    //     perror("pthread_create for keep-alive failed");
+    //     exit(EXIT_FAILURE);
+    // }
 
     while (1) {
         // Accept new client connection
