@@ -29,6 +29,7 @@ struct player {
     int hands_played;
     int balance;
     int is_connected;
+    int is_created;
     pthread_t thread;
 };
 

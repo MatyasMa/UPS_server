@@ -492,17 +492,15 @@ int main(int argc, char *argv[]) {
         if (players_count < MAX_PLAYERS) {
             int disconnected_player_id = 0;
 
-            if (players_count == MAX_PLAYERS) {
-                disconnected_player_id = is_some_player_disconnected();
-                printf("existuje uživatel bez připojení., id: %d\n",disconnected_player_id);
-            } else {
-                disconnected_player_id = -1;
-            }
+            disconnected_player_id = is_some_player_disconnected();
+            printf("existuje uživatel bez připojení., id: %d\n",disconnected_player_id);
+
 
             if (disconnected_player_id == -1) {
                 players[players_count].id = players_count + 1;
                 players[players_count].socket_fd = client_socket;
                 players[players_count].is_connected = 1;
+                players[players_count].is_created = 1;
             } else {
                 players[disconnected_player_id].socket_fd = client_socket;
                 players[disconnected_player_id].is_connected = 1;
@@ -534,7 +532,7 @@ int main(int argc, char *argv[]) {
             } else {
                 players[disconnected_player_id].thread = thread_id;
             }
-            
+
             // players[players_count].thread = thread_id;
 
             // Increment player count

@@ -125,7 +125,7 @@ void clear_players_data(void) {
 int is_some_player_disconnected(void) {
     int i;
     for (i = 0; i < MAX_PLAYERS; ++i) {
-        if (!players[i].is_connected) {
+        if (!players[i].is_connected && players[i].is_created) {
             return i;
         }
     }
