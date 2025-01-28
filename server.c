@@ -60,7 +60,8 @@ void handle_disconnect(int player_id) {
 
     char message[256];
     snprintf(message, sizeof(message), "disconnected:%d;", player_id);
-    broadcast_message(message);
+    send_message_to_player(id_player_to_send, message);
+    // broadcast_message(message);
     // send_message_to_player(id_player_to_send, players[player_id].nickname);
 
     players[player_id].is_connected = 0;
@@ -74,7 +75,7 @@ void handle_disconnect(int player_id) {
     // Nastaví časovač na obnovení
     time_t disconnect_time = time(NULL);
 
-    while (time(NULL) - disconnect_time < KEEP_ALIVE_TIMEOUT) {
+    while (time(NULL) - disconnect_time < TRY_RECONNECT_TIME) {
         if (client_status[player_id].is_connected) {
             printf("Player %d reconnected\n", player_id);
             // TODO: zpracovat tuto zprávu
