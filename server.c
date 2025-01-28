@@ -98,6 +98,36 @@ void* handle_client(void* arg) {
     while (1) {
         memset(buffer, 0, sizeof(buffer)); // Clear buffer
         printf("Waiting for message from client %d...\n", players[player_id].id);
+
+
+        // Nastavení struktury pro select()
+        fd_set read_fds;
+        FD_ZERO(&read_fds);
+        FD_SET(players[player_id].socket_fd, &read_fds);
+
+        // Nastavení timeoutu na 5 sekund
+        struct timeval timeout;
+        timeout.tv_sec = KEEP_ALIVE_INTERVAL;  // 5 sekund
+        timeout.tv_usec = 0;
+
+        // Volání select()
+        int select_result = select(players[player_id].socket_fd + 1, &read_fds, NULL, NULL, &timeout);
+
+        if (select_result == -1) {
+            // Chyba při volání select()
+            perror("select failed");
+            handle_disconnect(player_id);
+            close(players[player_id].socket_fd);
+            pthread_exit(NULL);
+        } else if (select_result == 0) {
+            // Timeout: žádná zpráva nebyla přijata za 5 sekund
+            printf("No message received from client %d for 5 seconds.\n", players[player_id].id);
+            handle_disconnect(player_id);
+            continue;  // Pokračujte v čekání na další zprávu
+        }
+
+
+
         bytes_read = recv(players[player_id].socket_fd, buffer, sizeof(buffer), 0);
         client_status[player_id].last_response_time = time(NULL);
 
