@@ -19,6 +19,9 @@ struct client_status client_status[MAX_PLAYERS];
 
 void* keep_alive_thread(void* arg) {
     int player_id = *(int*)arg;
+
+    free(arg); 
+    
     while (1) {
         sleep(KEEP_ALIVE_INTERVAL);
         if (check_ready_of_players()) {
@@ -38,7 +41,7 @@ void* keep_alive_thread(void* arg) {
                 printf("  Last response time: %ld\n", client_status[player_id].last_response_time);
                 printf("  KEEP_ALIVE_TIMEOUT: %d\n", KEEP_ALIVE_TIMEOUT);
                 printf("  Difference: %ld\n", time(NULL) - client_status[player_id].last_response_time);
-                
+
                 // Check for pong response
                 if (time(NULL) - client_status[player_id].last_response_time > KEEP_ALIVE_TIMEOUT) {
                     printf("Client %d timeout\n", player_id);
@@ -137,6 +140,16 @@ void* handle_client(void* arg) {
     int keep_alive_counter = 0;
 
     pthread_t keep_alive_tid;
+
+    // Allocate memory for player_id
+    int* player_id_ptr = malloc(sizeof(int));
+    if (player_id_ptr == NULL) {
+        perror("Failed to allocate memory for player_id");
+        exit(EXIT_FAILURE);
+    }
+
+    *player_id_ptr = player_id;
+
     if (pthread_create(&keep_alive_tid, NULL, keep_alive_thread, (void *)player_id) != 0) {
         perror("pthread_create for keep-alive failed");
         exit(EXIT_FAILURE);
