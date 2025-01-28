@@ -5,6 +5,7 @@
 #include "players.h"
 #include "sender.h"
 
+#include <sys/select.h>
 
 #define PORT 8080
 
