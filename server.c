@@ -24,13 +24,20 @@ void* keep_alive_thread(void* arg) {
             for (int i = 0; i < MAX_PLAYERS; ++i) {
                 if (players[i].is_connected == 1) {
                     // Send ping message
-                    printf("Sending ping for client %d\n", players[i].id - 1);
+                    printf("\nSending ping for client %d\n", players[i].id - 1);
                     if (send(players[i].socket_fd, "ping;", strlen("ping;"), 0) < 0) {
                         perror("Ping send failed");
                         handle_disconnect(i);
                         continue;
                     }
 
+                    
+                    // Výpis informací před podmínkou
+                    printf("Checking timeout for client %d:\n", i);
+                    printf("  Current time: %ld\n", time(NULL));
+                    printf("  Last response time: %ld\n", client_status[i].last_response_time);
+                    printf("  KEEP_ALIVE_TIMEOUT: %d\n", KEEP_ALIVE_TIMEOUT);
+                    printf("  Difference: %ld\n", time(NULL) - client_status[i].last_response_time);
                     // Check for pong response
                     if (time(NULL) - client_status[i].last_response_time > KEEP_ALIVE_TIMEOUT) {
                         printf("Client %d timeout\n", i);
