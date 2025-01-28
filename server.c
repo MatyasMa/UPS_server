@@ -111,7 +111,7 @@ void* handle_client(void* arg) {
 
         if (bytes_read <= 0) {
             // Client disconnected or error
-            printf("Client %d disconnected.\n", players[player_id].id);
+            printf("Client %d disconnected.\n", player_id);
             handle_disconnect(player_id);
 
 
@@ -484,8 +484,9 @@ int main(int argc, char *argv[]) {
             players_count++;
         } else {
             // Max players reached, send error message to client
-            char *error_message = "Max players reached. Try again later.\n";
-            send(client_socket, error_message, strlen(error_message), 0);
+            // char *error_message = "Max players reached. Try again later.\n";
+            // send(client_socket, error_message, strlen(error_message), 0);
+            printf("maximum hráčů!!!\n");
             close(client_socket);
         }
     }
