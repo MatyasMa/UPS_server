@@ -42,46 +42,14 @@ void* keep_alive_thread(void* arg) {
                 // Check for pong response
                 if (time(NULL) - client_status[player_id].last_response_time > KEEP_ALIVE_TIMEOUT) {
                     printf("Client %d timeout\n", player_id);
-                    handle_disconnect(player_id);                    
+                    handle_disconnect(player_id); 
+                    pthread_exit(NULL);                   
                 }
             }            
     }        
     }
     return NULL;
 }
-
-// void* keep_alive_thread(void* arg) {
-//     while (1) {
-//         sleep(KEEP_ALIVE_INTERVAL);
-//         if (check_ready_of_players()) {
-//             for (int i = 0; i < MAX_PLAYERS; ++i) {
-//                 if (players[i].is_connected == 1) {
-//                     // Send ping message
-//                     printf("\nSending ping for client %d\n", players[i].id - 1);
-//                     if (send(players[i].socket_fd, "ping;", strlen("ping;"), 0) < 0) {
-//                         perror("Ping send failed");
-//                         // handle_disconnect(i);
-//                         continue;
-//                     }
-
-                    
-//                     // Výpis informací před podmínkou
-//                     printf("Checking timeout for client %d:\n", i);
-//                     printf("  Current time: %ld\n", time(NULL));
-//                     printf("  Last response time: %ld\n", client_status[i].last_response_time);
-//                     printf("  KEEP_ALIVE_TIMEOUT: %d\n", KEEP_ALIVE_TIMEOUT);
-//                     printf("  Difference: %ld\n", time(NULL) - client_status[i].last_response_time);
-//                     // Check for pong response
-//                     if (time(NULL) - client_status[i].last_response_time > KEEP_ALIVE_TIMEOUT) {
-//                         printf("Client %d timeout\n", i);
-//                         handle_disconnect(i);
-//                     }
-//                 }
-//             }
-//         }        
-//     }
-//     return NULL;
-// }
 
 void handle_disconnect(int player_id) {
     printf("Client %d disconnected\n", player_id);
