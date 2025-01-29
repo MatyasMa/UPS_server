@@ -54,11 +54,19 @@ int create_shared_memory(void) {
 }
 
 
-int check_ready_of_players(void) {
+int check_ready_of_players(struct session* curr_sess) {
     int all_ready = 1;
+    // pthread_mutex_lock(&players_mutex);
+    //     for (int i = 0; i < MAX_PLAYERS; ++i) {
+    //         if (!players[i].id || !players[i].is_ready) {
+    //             all_ready = 0;
+    //         }
+    //     }
+    // pthread_mutex_unlock(&players_mutex);
+
     pthread_mutex_lock(&players_mutex);
-        for (int i = 0; i < MAX_PLAYERS; ++i) {
-            if (!players[i].id || !players[i].is_ready) {
+        for (int i = 0; i < MAX_PLAYERS_IN_GAME; ++i) {
+            if (!curr_sess->players[i]->id || !curr_sess->players[i]->is_ready) {
                 all_ready = 0;
             }
         }

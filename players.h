@@ -2,7 +2,8 @@
 #define PLAYERS_H
 
 int create_shared_memory(void);
-int check_ready_of_players(void);
+// int check_ready_of_players(void);
+int check_ready_of_players(struct session* curr_sess);
 // int check_ready_to_play_hand_of_players(void);
 int check_ready_to_play_hand_of_players(struct session* curr_sess);
 void player_hit(int player_id);

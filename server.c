@@ -196,7 +196,7 @@ void* handle_client(void* arg) {
             players[player_id].is_ready = 1;
 
 
-            if (check_ready_of_players()) {
+            if (check_ready_of_players(clients_sess)) {
                 start_clients();
                 printf("nejsou ready\n");
                 // broadcast_message("start_game\n");
@@ -480,14 +480,14 @@ int main(int argc, char *argv[]) {
         }
 
         if (players_count < MAX_PLAYERS) {
-            struct session sess = find_first_useful_game();
+            struct session* sess = find_first_useful_game();
 
-            if (sess.players[0]) {
-                sess.players[1] = &players[players_count];
-                sess.is_full = 1;
+            if (sess->players[0]) {
+                sess->players[1] = &players[players_count];
+                sess->is_full = 1;
             } else {
-                sess.is_active = 1;
-                sess.players[0] = &players[players_count];
+                sess->is_active = 1;
+                sess->players[0] = &players[players_count];
             }
 
             players[players_count].id = players_count + 1;
@@ -561,11 +561,11 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-struct session find_first_useful_game() {
+struct session* find_first_useful_game() {
     int i;
     for (i = 0; i < MAX_GAMES; ++i) {
         if (!games[i].is_full) {
-            return games[i];
+            return &games[i];
         }
     }
 } 
