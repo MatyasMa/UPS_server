@@ -66,7 +66,7 @@ int check_ready_of_players(struct session* curr_sess) {
 
     pthread_mutex_lock(&players_mutex);
         for (int i = 0; i < MAX_PLAYERS_IN_GAME; ++i) {
-            if (!&curr_sess->players[i]->id || !&curr_sess->players[i]->is_ready) {
+            if (!&curr_sess->players[i]->is_ready) {
                 all_ready = 0;
             }
         }
