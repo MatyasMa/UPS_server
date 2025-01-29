@@ -39,9 +39,13 @@ int create_shared_memory(void) {
     }
 
     games = malloc(MAX_GAMES * sizeof(struct session));
-
+    if (!games) {
+        exit(EXIT_FAILURE);
+    }
     for (int j = 0; j < MAX_GAMES; ++j) {
-        games[j].players[0] = NULL;
+        for (int k = 0; k < MAX_PLAYERS_IN_GAME; ++k) {
+            games[j].players[k];
+        }        
         games[j].is_active = 0;
         games[j].is_full = 0;        
     }
@@ -62,7 +66,7 @@ int check_ready_of_players(void) {
     return all_ready;
 }
 
-int check_ready_to_play_hand_of_players(struct session curr_sess) {
+int check_ready_to_play_hand_of_players(struct session* curr_sess) {
     int all_ready_to_play_hand = 1;
     // pthread_mutex_lock(&players_mutex);
 
@@ -77,7 +81,7 @@ int check_ready_to_play_hand_of_players(struct session curr_sess) {
     pthread_mutex_lock(&players_mutex);
 
         for (int i = 0; i < MAX_PLAYERS_IN_GAME; ++i) {
-            if (!curr_sess.players[i]->is_ready_to_play_hand) {
+            if (!&curr_sess->players[i]->is_ready_to_play_hand) {
                 all_ready_to_play_hand = 0;
             }
         }

@@ -107,7 +107,7 @@ void* handle_client(void* arg) {
 
     pthread_t keep_alive_tid;
 
-    struct session clients_sess = find_clients_session(player_id);
+    struct session* clients_sess = find_clients_session(player_id);
 
     // Allocate memory for player_id
     int* player_id_ptr = malloc(sizeof(int));
@@ -570,12 +570,12 @@ struct session find_first_useful_game() {
     }
 } 
 
-struct session find_clients_session(int player_id) {
+struct session* find_clients_session(int player_id) {
     int i, j;
     for (i = 0; i < MAX_GAMES; ++i) {
         for (j = 0; j < MAX_PLAYERS_IN_GAME; ++j) {
             if (games[i].players[j]->id - 1 == player_id) {
-                return games[i];
+                return &games[i];
             }
         }
         
