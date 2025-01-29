@@ -14,11 +14,11 @@ char get_random_card(void) {
     return values[random_id];    
 }
 
-void croupier_hit(void) {
+void croupier_hit(struct session* curr_sess) {
     sleep(1);
     char mess[20];
     sprintf(mess, "croupier_hit:%c;", get_random_card());
-    broadcast_message(mess);
+    broadcast_message(mess, curr_sess);
 }
 
 void start_croupier_play(int player_id) {

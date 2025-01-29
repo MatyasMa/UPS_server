@@ -44,7 +44,7 @@ int create_shared_memory(void) {
     }
     for (int j = 0; j < MAX_GAMES; ++j) {
         for (int k = 0; k < MAX_PLAYERS_IN_GAME; ++k) {
-            games[j].players[k];
+            games[j].players[k] = NULL;
         }        
         games[j].is_active = 0;
         games[j].is_full = 0;        
@@ -89,7 +89,7 @@ int check_ready_to_play_hand_of_players(struct session* curr_sess) {
     pthread_mutex_lock(&players_mutex);
 
         for (int i = 0; i < MAX_PLAYERS_IN_GAME; ++i) {
-            if (!&curr_sess->players[i]->is_ready_to_play_hand) {
+            if (!curr_sess->players[i]->is_ready_to_play_hand) {
                 all_ready_to_play_hand = 0;
             }
         }
@@ -100,7 +100,7 @@ int check_ready_to_play_hand_of_players(struct session* curr_sess) {
 
 
 
-void player_hit(int player_id) {
+void player_hit(int player_id, struct session* curr_sess) {
     pthread_mutex_lock(&players_mutex);
     
     sleep(1);
@@ -111,7 +111,7 @@ void player_hit(int player_id) {
     // sprintf(mess, mess, random_card);
     printf("odesílám zprávu hitnutí: %s\n", mess);
 
-    broadcast_message(mess);
+    broadcast_message(mess, curr_sess);
     // if (send(players[player_id].socket_fd, mess, strlen(mess), 0) < 0) {
     //     perror("send failed");
     // }

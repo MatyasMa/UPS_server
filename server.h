@@ -41,7 +41,7 @@ struct session {
     int is_full;
 };
 
-struct session* find_first_useful_game();
+struct session* find_first_usable_game(void);
 struct session* find_clients_session(int player_id);
 
 extern pthread_mutex_t players_mutex;
@@ -67,6 +67,9 @@ void handle_sigchld(void);
 
 void handle_disconnect(int player_id);
 
-void get_first_cards(int player_id);
+// void get_first_cards(int player_id);
+void get_first_cards(int player_id, struct session* curr_sess);
+
+
 
 #endif

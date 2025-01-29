@@ -175,7 +175,7 @@ void* handle_client(void* arg) {
                 char message[50]; 
                 sprintf(message, "reconnected:%s;", nick); 
                 printf("odesílám zprávu: %s",message);
-                broadcast_message(message);           
+                broadcast_message(message, clients_sess);           
             } else {
                 /* TODO: pripojil se jiny (novy) hrac (s jinou přezdívkou) */
             }
@@ -215,7 +215,7 @@ void* handle_client(void* arg) {
             printf("Client %d - %s is NOT ready\n", players[player_id].id, players[player_id].nickname);
             players[player_id].is_ready = 0;
 
-        } else if (!strcmp(buffer, "exit")) {
+        } else if (!strncmp(buffer, "exit", 4)) {
             printf("Client %d requested exit.\n", players[player_id].id);
             close(players[player_id].socket_fd);
             pthread_exit(NULL);
@@ -226,10 +226,10 @@ void* handle_client(void* arg) {
 
             if (check_ready_to_play_hand_of_players(clients_sess)) {
                 // get first card for croupier and send message for players to ask for cards
-                broadcast_message("ask_for_first_cards;");
+                broadcast_message("ask_for_first_cards;", clients_sess);
                 pthread_mutex_lock(&players_mutex);
                 sleep(1);
-                croupier_hit();
+                croupier_hit(clients_sess);
                 // TODO: první v session
                 players[0].can_play = 1;
                 pthread_mutex_unlock(&players_mutex);
@@ -237,12 +237,12 @@ void* handle_client(void* arg) {
 
         } else if (!strncmp(buffer, "get_first_cards", 15)) {
             
-            get_first_cards(player_id);
+            get_first_cards(player_id, clients_sess);
             
         } else if (!strncmp(buffer, "player_get_hit", 14)) {
 
             if (players[player_id].can_play) {
-                player_hit(player_id);
+                player_hit(player_id, clients_sess);
             } else {
                 printf("Momentálně nejste na řadě.\n");
             }
@@ -278,7 +278,7 @@ void* handle_client(void* arg) {
                 hide_players_buttons(1);
                 
                 if (players[0].loses_hand && players[1].loses_hand) {
-                    broadcast_message("hand_ended_for_all");
+                    broadcast_message("hand_ended_for_all;", clients_sess);
                 } else {
                     // Posílám libovolném uživateli
                     start_croupier_play(1);
@@ -286,11 +286,11 @@ void* handle_client(void* arg) {
             }
         } else if (!strncmp(buffer, "croupier_get_hit", 16)) {
             // pthread_mutex_lock(&players_mutex);
-            croupier_hit();
+            croupier_hit(clients_sess);
             // sleep(1);
             // pthread_mutex_unlock(&players_mutex);
         } else if (!strncmp(buffer, "croupier_play_end", 17)) {
-            broadcast_message("hand_ended_for_all");
+            broadcast_message("hand_ended_for_all;", clients_sess);
 
         } else if (!strncmp(buffer, "hand_end", 8)) {
             
@@ -302,13 +302,13 @@ void* handle_client(void* arg) {
                 }
 
                 if (player_id == 1) {
-                    broadcast_message("game_over");
+                    broadcast_message("game_over;", clients_sess);
                 }
             }
             
             unready_to_play_hand_players();
         } else if (!strncmp(buffer, "send_game_over", 14)) {
-            broadcast_message("game_over");
+            broadcast_message("game_over;", clients_sess);
         } else if (!strncmp(buffer, "balance:", 8)) {
             int result;
             // Parsování znaku po "player_stand:"
@@ -339,7 +339,7 @@ void* handle_client(void* arg) {
                     send_message_to_player(1, message2);
                 } else {
                     sprintf(message1, "draw:%d", players[0].balance); 
-                    broadcast_message(message1);
+                    broadcast_message(message1, clients_sess);
                 }
  
                 clear_players_data();
@@ -355,7 +355,7 @@ void* handle_client(void* arg) {
     }
 }
 
-void get_first_cards(int player_id) {
+void get_first_cards(int player_id, struct session* curr_sess) {
     hide_players_buttons(player_id);
 
     // Čekání na správné ID hráče
@@ -364,8 +364,8 @@ void get_first_cards(int player_id) {
     }
 
     // Kritická sekce: hráč provede své akce
-    player_hit(player_id);
-    player_hit(player_id);
+    player_hit(player_id, curr_sess);
+    player_hit(player_id, curr_sess);
 
     players[current_player_id].has_first_cards = 1;
     current_player_id++;
@@ -480,7 +480,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (players_count < MAX_PLAYERS) {
-            struct session* sess = find_first_useful_game();
+            struct session* sess = find_first_usable_game();
 
             if (sess->players[0]) {
                 sess->players[1] = &players[players_count];
@@ -561,13 +561,15 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-struct session* find_first_useful_game() {
+struct session* find_first_usable_game(void) {
     int i;
     for (i = 0; i < MAX_GAMES; ++i) {
         if (!games[i].is_full) {
             return &games[i];
         }
     }
+
+    return NULL;
 } 
 
 struct session* find_clients_session(int player_id) {
@@ -580,4 +582,6 @@ struct session* find_clients_session(int player_id) {
         }
         
     }
+
+    return NULL;
 }
