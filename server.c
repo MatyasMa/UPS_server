@@ -152,17 +152,28 @@ void* handle_client(void* arg) {
             }
             if (sscanf(buffer, "reconnected:%s", nick) == 1) {
                 /* pripojil se stejny hrac */
+                printf("hráč z přezdívkou %s se připojil zpět\n", nick);
+                int id_reconnected = -1;
                 if (players[player_id].nickname == nick) {
-                    printf("hráč z přezdívkou %s se připojil zpět\n", nick);
-                    players[player_id].is_connected = 1;
-                    client_status[player_id].is_connected = 1;
-                    // TODO: získat data, která byla zasílána za obu nepřipojení - ty si můžu uložit do hráče id 2
+                    id_reconnected = player_id;                    
+                    // TODO: získat data, která byla zasílána za obu nepřipojení - ty si můžu uložit do hráče id 2                    
+                } else {
+                    if (player_id == 0) {
+                        id_reconnected = 1;
+                    } else {
+                        id_reconnected = 0;
+                    }
+                }
 
-                    char message[50]; 
-                    sprintf(message, "reconnected:%d;", player_id); 
-                    printf("odesílám zprávu: %s",message);
-                    broadcast_message(message);
-                }                
+                if (id_reconnected != -1) {
+                    players[id_reconnected].is_connected = 1;
+                    client_status[id_reconnected].is_connected = 1;
+                }
+
+                char message[50]; 
+                sprintf(message, "reconnected:%s;", nick); 
+                printf("odesílám zprávu: %s",message);
+                broadcast_message(message);           
             } else {
                 /* TODO: pripojil se jiny (novy) hrac (s jinou přezdívkou) */
             }
