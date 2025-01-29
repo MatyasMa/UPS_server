@@ -141,7 +141,7 @@ void* handle_client(void* arg) {
         buffer[bytes_read] = '\0';
         printf("buffer: %s\n",buffer);
 
-
+    
         if (!strncmp(buffer, "pong", 4)) {        
             printf("%d: Client %d is alive\n", keep_alive_counter++, player_id);
         } else if (!strncmp(buffer, "reconnected", 10)) {
@@ -207,7 +207,7 @@ void* handle_client(void* arg) {
             close(players[player_id].socket_fd);
             pthread_exit(NULL);
 
-        } else if (!strcmp(buffer, "ready_to_play_hand")){
+        } else if (!strncmp(buffer, "ready_to_play_hand", 18)){
   
             players[player_id].is_ready_to_play_hand = 1;
 
@@ -221,11 +221,11 @@ void* handle_client(void* arg) {
                 pthread_mutex_unlock(&players_mutex);
             }
 
-        } else if (!strcmp(buffer, "get_first_cards")) {
+        } else if (!strncmp(buffer, "get_first_cards", 15)) {
             
             get_first_cards(player_id);
             
-        } else if (!strcmp(buffer, "player_get_hit")) {
+        } else if (!strncmp(buffer, "player_get_hit", 14)) {
 
             if (players[player_id].can_play) {
                 player_hit(player_id);
@@ -270,14 +270,15 @@ void* handle_client(void* arg) {
                     start_croupier_play(1);
                 }
             }
-        } else if (!strcmp(buffer, "croupier_get_hit")) {
+        } else if (!strncmp(buffer, "croupier_get_hit", 16)) {
             // pthread_mutex_lock(&players_mutex);
             croupier_hit();
             // sleep(1);
             // pthread_mutex_unlock(&players_mutex);
-        } else if (!strcmp(buffer, "croupier_play_end")) {
+        } else if (!strncmp(buffer, "croupier_play_end", 17)) {
             broadcast_message("hand_ended_for_all");
-        } else if (!strcmp(buffer, "hand_end")) {
+
+        } else if (!strncmp(buffer, "hand_end", 8)) {
             
             if (players[0].hands_played == MAX_HANDS_PLAY || players[1].hands_played == MAX_HANDS_PLAY) {
 
@@ -292,7 +293,7 @@ void* handle_client(void* arg) {
             }
             
             unready_to_play_hand_players();
-        } else if (!strcmp(buffer, "send_game_over")) {
+        } else if (!strncmp(buffer, "send_game_over", 14)) {
             broadcast_message("game_over");
         } else if (!strncmp(buffer, "balance:", 8)) {
             int result;
