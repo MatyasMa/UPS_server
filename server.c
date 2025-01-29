@@ -160,6 +160,7 @@ void* handle_client(void* arg) {
 
                     char message[50]; 
                     sprintf(message, "reconnected:%d;", player_id); 
+                    printf("odesílám zprávu: %s",message);
                     broadcast_message(message);
                 }                
             } else {
