@@ -496,18 +496,27 @@ int main(int argc, char *argv[]) {
         if (players_count < MAX_PLAYERS) {
             struct session* sess = find_first_usable_game();
 
-            if (sess->players[0]) {
-                sess->players[1] = &players[players_count];
-                sess->is_full = 1;
+            if (sess) {
+                if (sess->players[0]) {
+                    sess->players[1] = &players[players_count];
+                    sess->is_full = 1;
+                } else {
+                    sess->is_active = 1;
+                    sess->players[0] = &players[players_count];
+                }
             } else {
-                sess->is_active = 1;
-                sess->players[0] = &players[players_count];
+                printf("game not found\n");
+                continue;
             }
+            
 
             players[players_count].id = players_count + 1;
             players[players_count].socket_fd = client_socket;
             players[players_count].is_connected = 1;
             players[players_count].is_created = 1;
+            players[players_count].is_ready = 0;
+            players[players_count].is_ready_to_play_hand = 0;
+            players[players_count].can_play = 0;
             // int disconnected_player_id = 0;
 
             // disconnected_player_id = is_some_player_disconnected();
