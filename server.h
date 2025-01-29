@@ -41,6 +41,9 @@ struct session {
     int is_full;
 };
 
+struct session find_first_useful_game();
+struct session find_clients_session(int player_id);
+
 extern pthread_mutex_t players_mutex;
 extern struct player *players;
 extern struct session *games;
