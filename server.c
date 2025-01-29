@@ -24,7 +24,8 @@ void* keep_alive_thread(void* arg) {
     
     while (1) {
         sleep(KEEP_ALIVE_INTERVAL);
-        if (check_ready_of_players()) {
+
+        // if (check_ready_of_players()) {
             if (players[player_id].is_connected == 1) {
                 // Send ping message
                 printf("\nSending ping for client %d\n", players[player_id].id - 1);
@@ -46,7 +47,7 @@ void* keep_alive_thread(void* arg) {
                     pthread_exit(NULL);                   
                 }
             }            
-    }        
+        // }        
     }
     return NULL;
 }
@@ -115,6 +116,7 @@ void* handle_client(void* arg) {
 
     *player_id_ptr = player_id;
 
+    client_status[player_id].last_response_time = time(NULL);
     if (pthread_create(&keep_alive_tid, NULL, keep_alive_thread, (void *)player_id_ptr) != 0) {
         perror("pthread_create for keep-alive failed");
         exit(EXIT_FAILURE);
@@ -155,6 +157,10 @@ void* handle_client(void* arg) {
                     players[player_id].is_connected = 1;
                     client_status[player_id].is_connected = 1;
                     // TODO: získat data, která byla zasílána za obu nepřipojení - ty si můžu uložit do hráče id 2
+
+                    char message[50]; 
+                    sprintf(message, "reconnected:%d;", player_id); 
+                    broadcast_message(message);
                 }                
             } else {
                 /* TODO: pripojil se jiny (novy) hrac (s jinou přezdívkou) */
@@ -172,7 +178,7 @@ void* handle_client(void* arg) {
             if (sscanf(buffer, "ready:%s", nick) == 1) {
                 players[player_id].nickname = nick;
             }
-            printf("Client %d - %s is ready\n", players[player_id].id, players[player_id].nickname);
+            printf("Client %d - %s is ready\n", player_id, players[player_id].nickname);
             players[player_id].is_ready = 1;
 
 
