@@ -70,6 +70,7 @@ void handle_disconnect(int player_id);
 // void get_first_cards(int player_id);
 void get_first_cards(int player_id, struct session* curr_sess);
 
+int has_players_first_cards(struct session* curr_sess);
 
 
 #endif

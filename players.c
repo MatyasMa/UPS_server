@@ -120,16 +120,23 @@ void player_hit(int player_id, struct session* curr_sess) {
 }
 
 
-void hide_players_buttons(int player_id) {
+void hide_players_buttons(int player_position, struct session* curr_sess) {
     char *message = "hide_play_buttons;";
-    if (send(players[player_id].socket_fd, message, strlen(message), 0) < 0) {
+    // if (send(players[player_id].socket_fd, message, strlen(message), 0) < 0) {
+    //     perror("send failed");
+    // }
+    if (send(curr_sess->players[player_position]->socket_fd, message, strlen(message), 0) < 0) {
         perror("send failed");
     }
 }
 
-void show_players_buttons(int player_id) {
+void show_players_buttons(int player_position, struct session* curr_sess) {
     char *message = "show_play_buttons;";
-    if (send(players[player_id].socket_fd, message, strlen(message), 0) < 0) {
+    // if (send(players[player_id].socket_fd, message, strlen(message), 0) < 0) {
+    //     perror("send failed");
+    // }
+    
+    if (send(curr_sess->players[player_position]->socket_fd, message, strlen(message), 0) < 0) {
         perror("send failed");
     }
 }

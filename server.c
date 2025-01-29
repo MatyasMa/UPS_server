@@ -270,12 +270,12 @@ void* handle_client(void* arg) {
             if (player_id == 0) {
                 // TODO: can_play asi odstranit
                 players[0].can_play = 0;
-                hide_players_buttons(0);
+                hide_players_buttons(0, clients_sess);
                 players[1].can_play = 1;
-                show_players_buttons(1);
+                show_players_buttons(1, clients_sess);
             } else if (player_id == 1) {
                 players[1].can_play = 0;
-                hide_players_buttons(1);
+                hide_players_buttons(1, clients_sess);
                 
                 if (players[0].loses_hand && players[1].loses_hand) {
                     broadcast_message("hand_ended_for_all;", clients_sess);
@@ -356,7 +356,7 @@ void* handle_client(void* arg) {
 }
 
 void get_first_cards(int player_id, struct session* curr_sess) {
-    hide_players_buttons(player_id);
+    hide_players_buttons(player_id, curr_sess);
 
     // Čekání na správné ID hráče
     while (player_id != current_player_id && !players[player_id-1].has_first_cards) {
@@ -370,13 +370,27 @@ void get_first_cards(int player_id, struct session* curr_sess) {
     players[current_player_id].has_first_cards = 1;
     current_player_id++;
     
-    if (players[player_id].id == MAX_PLAYERS) {
-        current_player_id = 0;
-        show_players_buttons(0);
+    pthread_mutex_lock(&players_mutex);
+    if (has_players_first_cards(curr_sess)) {
+        show_players_buttons(0, curr_sess);
     }
+    pthread_mutex_unlock(&players_mutex);
+    // if (players[player_id].id == MAX_PLAYERS) {
+    //     current_player_id = 0;
+    //     show_players_buttons(0);
+    // }
 }
 
-
+int has_players_first_cards(struct session* curr_sess) {
+    int i;
+    int all_has_first_cards = 1;
+    for (i = 0; i < MAX_PLAYERS_IN_GAME; ++i) {
+        if (!curr_sess->players[i]->has_first_cards) {
+            all_has_first_cards = 0;
+        }
+    }
+    return all_has_first_cards;
+}
 
 void start_clients(void) {
     char message[100]; // Allocate a fixed-size buffer
