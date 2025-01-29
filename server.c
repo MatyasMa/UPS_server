@@ -12,6 +12,7 @@ int players_count = 0;
 
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
+// TODO: smazat
 int current_player_id = 0;
 
 struct client_status client_status[MAX_PLAYERS];
@@ -236,7 +237,6 @@ void* handle_client(void* arg) {
             }
 
         } else if (!strncmp(buffer, "get_first_cards", 15)) {
-            
             get_first_cards(player_id, clients_sess);
             
         } else if (!strncmp(buffer, "player_get_hit", 14)) {
@@ -290,6 +290,9 @@ void* handle_client(void* arg) {
             // sleep(1);
             // pthread_mutex_unlock(&players_mutex);
         } else if (!strncmp(buffer, "croupier_play_end", 17)) {
+            for (int i = 0; i < MAX_PLAYERS_IN_GAME; ++i) {
+                clients_sess->players[i]->has_first_cards = 0;
+            }
             broadcast_message("hand_ended_for_all;", clients_sess);
 
         } else if (!strncmp(buffer, "hand_end", 8)) {
@@ -359,7 +362,7 @@ void get_first_cards(int player_id, struct session* curr_sess) {
     hide_players_buttons(player_id, curr_sess);
 
     // Čekání na správné ID hráče
-    while (player_id != current_player_id && !players[player_id-1].has_first_cards) {
+    while (!curr_sess->players[0]->has_first_cards && curr_sess->players[1]->id == player_id + 1) {
         sleep(1);
     }
 
@@ -367,8 +370,7 @@ void get_first_cards(int player_id, struct session* curr_sess) {
     player_hit(player_id, curr_sess);
     player_hit(player_id, curr_sess);
 
-    players[current_player_id].has_first_cards = 1;
-    current_player_id++;
+    players[player_id].has_first_cards = 1;
     
     pthread_mutex_lock(&players_mutex);
     if (has_players_first_cards(curr_sess)) {
