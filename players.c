@@ -6,9 +6,10 @@
 int shmid; 
 pthread_mutex_t players_mutex = PTHREAD_MUTEX_INITIALIZER;
 struct player *players;
+struct session *games[MAX_GAMES];
 
 int create_shared_memory(void) {
-    shmid = shmget(IPC_PRIVATE, sizeof(struct player) * (MAX_PLAYERS+1), IPC_CREAT | 0666); 
+    shmid = shmget(IPC_PRIVATE, sizeof(struct player) * (MAX_PLAYERS), IPC_CREAT | 0666); 
     if (shmid == -1) {
         perror("shmget failed");
         return -1;
@@ -37,6 +38,12 @@ int create_shared_memory(void) {
         players[i].balance = -1;
     }
 
+    for (int j = 0; j < MAX_GAMES; ++j) {
+        games[j]->players[0] = NULL;
+        games[j]->is_active = 0;
+        games[j]->is_full = 0;        
+    }
+
     return 0;
 }
 
@@ -53,12 +60,23 @@ int check_ready_of_players(void) {
     return all_ready;
 }
 
-int check_ready_to_play_hand_of_players(void) {
+int check_ready_to_play_hand_of_players(struct session curr_sess) {
+    int all_ready_to_play_hand = 1;
+    // pthread_mutex_lock(&players_mutex);
+
+    //     for (int i = 0; i < MAX_PLAYERS; ++i) {
+    //         if (!players[i].id || !players[i].is_ready_to_play_hand) {
+    //             all_ready_to_play_hand = 0;
+    //         }
+    //     }
+
+    // pthread_mutex_unlock(&players_mutex);
+    // return all_ready_to_play_hand;
     int all_ready_to_play_hand = 1;
     pthread_mutex_lock(&players_mutex);
 
-        for (int i = 0; i < MAX_PLAYERS; ++i) {
-            if (!players[i].id || !players[i].is_ready_to_play_hand) {
+        for (int i = 0; i < MAX_PLAYERS_IN_GAME; ++i) {
+            if (!curr_sess.players[i]->is_ready_to_play_hand) {
                 all_ready_to_play_hand = 0;
             }
         }

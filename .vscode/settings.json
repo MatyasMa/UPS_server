@@ -3,6 +3,7 @@
         "stdio.h": "c",
         "server.h": "c",
         "players.h": "c",
-        "signal.h": "c"
+        "signal.h": "c",
+        "shm.h": "c"
     }
 }

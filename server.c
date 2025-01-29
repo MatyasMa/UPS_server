@@ -70,7 +70,7 @@ void handle_disconnect(int player_id) {
     players[2] = players[player_id];
     
 
-    players_count -= 1;
+    // players_count -= 1;
 
     client_status[player_id].is_connected = 0;
 
@@ -106,6 +106,8 @@ void* handle_client(void* arg) {
     int keep_alive_counter = 0;
 
     pthread_t keep_alive_tid;
+
+    struct session clients_sess = find_clients_session(player_id);
 
     // Allocate memory for player_id
     int* player_id_ptr = malloc(sizeof(int));
@@ -222,12 +224,13 @@ void* handle_client(void* arg) {
   
             players[player_id].is_ready_to_play_hand = 1;
 
-            if (check_ready_to_play_hand_of_players()) {
+            if (check_ready_to_play_hand_of_players(clients_sess)) {
                 // get first card for croupier and send message for players to ask for cards
                 broadcast_message("ask_for_first_cards;");
                 pthread_mutex_lock(&players_mutex);
                 sleep(1);
                 croupier_hit();
+                // TODO: první v session
                 players[0].can_play = 1;
                 pthread_mutex_unlock(&players_mutex);
             }
@@ -477,19 +480,33 @@ int main(int argc, char *argv[]) {
         }
 
         if (players_count < MAX_PLAYERS) {
-            int disconnected_player_id = 0;
+            struct session sess = find_first_useful_game();
 
-            disconnected_player_id = is_some_player_disconnected();
-
-            if (disconnected_player_id == -1) {
-                players[players_count].id = players_count + 1;
-                players[players_count].socket_fd = client_socket;
-                players[players_count].is_connected = 1;
-                players[players_count].is_created = 1;
+            if (sess.players[0]) {
+                sess.players[1] = &players[players_count];
+                sess.is_full = 1;
             } else {
-                players[disconnected_player_id].socket_fd = client_socket;
-                players[disconnected_player_id].is_connected = 1;
+                sess.is_active = 1;
+                sess.players[0] = &players[players_count];
             }
+
+            players[players_count].id = players_count + 1;
+            players[players_count].socket_fd = client_socket;
+            players[players_count].is_connected = 1;
+            players[players_count].is_created = 1;
+            // int disconnected_player_id = 0;
+
+            // disconnected_player_id = is_some_player_disconnected();
+
+            // if (disconnected_player_id == -1) {
+            //     players[players_count].id = players_count + 1;
+            //     players[players_count].socket_fd = client_socket;
+            //     players[players_count].is_connected = 1;
+            //     players[players_count].is_created = 1;
+            // } else {
+            //     players[disconnected_player_id].socket_fd = client_socket;
+            //     players[disconnected_player_id].is_connected = 1;
+            // }
             
 
             printf("Client connected: %s:%d\n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
@@ -497,11 +514,13 @@ int main(int argc, char *argv[]) {
 
             // Create unique player ID to pass to the thread
             int *player_id = malloc(sizeof(int));
-            if (disconnected_player_id != -1) {
-                *player_id = disconnected_player_id;
-            } else {
-                *player_id = players_count;
-            }
+            // if (disconnected_player_id != -1) {
+            //     *player_id = disconnected_player_id;
+            // } else {
+            //     *player_id = players_count;
+            // }
+
+            *player_id = players_count;
 
             // Create thread to handle client
             pthread_t thread_id;
@@ -511,12 +530,13 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            // TODO: přepíše původní thread id ?
-            if (disconnected_player_id == -1) {
-                players[players_count].thread = thread_id;
-            } else {
-                players[disconnected_player_id].thread = thread_id;
-            }
+            players[players_count].thread = thread_id;
+
+            // if (disconnected_player_id == -1) {
+            //     players[players_count].thread = thread_id;
+            // } else {
+            //     players[disconnected_player_id].thread = thread_id;
+            // }
 
             // players[players_count].thread = thread_id;
 
@@ -541,3 +561,23 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+struct session find_first_useful_game() {
+    int i;
+    for (i = 0; i < MAX_GAMES; ++i) {
+        if (!games[i].is_full) {
+            return games[i];
+        }
+    }
+} 
+
+struct session find_clients_session(int player_id) {
+    int i, j;
+    for (i = 0; i < MAX_GAMES; ++i) {
+        for (j = 0; j < MAX_PLAYERS_IN_GAME; ++j) {
+            if (games[i].players[j]->id - 1 == player_id) {
+                return games[i];
+            }
+        }
+        
+    }
+}

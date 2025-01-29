@@ -14,8 +14,10 @@
 #include <sys/wait.h>
 #include <pthread.h>
 
-#define MAX_PLAYERS 2
-#define MAX_HANDS_PLAY 1
+#define MAX_PLAYERS 10
+#define MAX_PLAYERS_IN_GAME 2
+#define MAX_GAMES 5
+#define MAX_HANDS_PLAY 2
 
 struct player {
     int id;
@@ -33,8 +35,16 @@ struct player {
     pthread_t thread;
 };
 
+struct session {
+    struct player *players[MAX_PLAYERS_IN_GAME];
+    int is_active;
+    int is_full;
+};
+
 extern pthread_mutex_t players_mutex;
 extern struct player *players;
+extern struct session *games;
+
 
 
 #define KEEP_ALIVE_INTERVAL 1       // Interval pro odesílání keep-alive zpráv (v sekundách)
