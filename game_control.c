@@ -17,7 +17,13 @@ char get_random_card(void) {
 void croupier_hit(struct session* curr_sess) {
     sleep(1);
     char mess[20];
-    sprintf(mess, "croupier_hit:%c;", get_random_card());
+    char random_card = get_random_card();
+
+    // sprintf(mess, "player_hit:%c_%c;", player_id + 1, random_card);
+
+    char new_card[2] = {random_card, '\0'};
+    strcat(curr_sess->croupier_cards, new_card);
+    sprintf(mess, "croupier_hit:%c;", random_card);
     broadcast_message(mess, curr_sess);
 }
 

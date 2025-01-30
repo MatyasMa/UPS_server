@@ -38,6 +38,7 @@ int create_shared_memory(void) {
         players[i].balance = -1;
     }
 
+    // inicializace všech her
     games = malloc(MAX_GAMES * sizeof(struct session));
     if (!games) {
         exit(EXIT_FAILURE);
@@ -47,7 +48,13 @@ int create_shared_memory(void) {
             games[j].players[k] = NULL;
         }        
         games[j].is_active = 0;
-        games[j].is_full = 0;        
+        games[j].is_full = 0; 
+        strcpy(games[j].player_one_cards, "");
+        strcpy(games[j].player_two_cards, "");
+        strcpy(games[j].croupier_cards, "");
+        // games[j].player_one_cards = malloc(10 * sizeof(char));
+        // games[j].player_two_cards = malloc(10 * sizeof(char));
+        // games[j].croupier_cards = malloc(10 * sizeof(char));
     }
 
     return 0;
@@ -116,7 +123,21 @@ void player_hit(int player_id, struct session* curr_sess) {
     char mess[20];
     char random_card = get_random_card();
     // sprintf(mess, "player_hit:%c_%c;", player_id + 1, random_card);
-    sprintf(mess, "player_hit:%d_%c;", (player_id + 1), random_card);
+
+    char new_card[2] = {random_card, '\0'};
+    int players_id = -1;
+    if (curr_sess->players[0]->id - 1 == player_id) {
+        players_id = 0;
+        strcat(curr_sess->player_one_cards, new_card);
+    } else {
+        players_id = 1;
+        strcat(curr_sess->player_two_cards, new_card);
+    }
+
+    sprintf(mess, "player_hit:%d_%c;", (players_id + 1), random_card);
+
+    
+    // sprintf(mess, "player_hit:%d_%c;", (player_id + 1), random_card);
     // sprintf(mess, mess, random_card);
     printf("odesílám zprávu hitnutí: %s\n", mess);
 
@@ -151,6 +172,7 @@ void show_players_buttons(int player_position, struct session* curr_sess) {
 }
 
 void unready_to_play_hand_players(void) {
+    // TODO: před session
     for (int i = 0; i < MAX_PLAYERS; ++i) {
         players[i].has_first_cards = 0;
         players[i].is_ready_to_play_hand = 0;
