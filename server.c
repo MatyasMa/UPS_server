@@ -5,6 +5,7 @@
 #include "players.h"
 #include "sender.h"
 
+#include <errno.h>
 
 #define PORT 8080
 
@@ -12,8 +13,6 @@ int players_count = 0;
 
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
-// TODO: smazat
-int current_player_id = 0;
 
 struct client_status client_status[MAX_PLAYERS];
 
@@ -49,9 +48,14 @@ void* keep_alive_thread(void* arg) {
                 if (time(NULL) - players[player_id].last_response_time > KEEP_ALIVE_TIMEOUT) {
                     printf("Client %d timeout\n", player_id);
                     if(handle_disconnect(player_id)) {
+                        // TODO: -> uzavřít zde soket a vyčistit odpojeného uživatele, po timeout!!
+
+
                         // TODO: ukončit klienta a oznámit mu že vyhrál
                         // TODO: nastavit room na prázdnou, protože v ní zůstane jen jeden uživatel
                         // TODO: vyčistit klienta stejně jako v mainu po disconnectu natvrdo, udělat pro to funkci
+
+                        // TODO: ukončit klienta, došlo k vypingování
                         pthread_exit(NULL);  
                     }                
                     // TODO: odeslat hráči stav hry -> ten je uložený v session, dát do vhodného tvaru a poslat hráči s player id
@@ -73,24 +77,36 @@ void* keep_alive_thread(void* arg) {
 int handle_disconnect(int player_id) {
     printf("Client %d disconnected\n", player_id);
 
+    struct session* curr_sess = find_clients_session(player_id);
+    
     int id_player_to_send = 0;
-    if (player_id == 0) {
-        id_player_to_send = 1;
-    }
+    int id_disconnected_position = 0;
+    
+    if (curr_sess->is_full) {
+        if (curr_sess->players[0]->id - 1 == player_id) {
+            id_disconnected_position = 0;
+            id_player_to_send = curr_sess->players[1]->id - 1;
+        } else if (curr_sess->players[1]->id - 1 == player_id) {
+            id_player_to_send = curr_sess->players[0]->id - 1;
+        }
+        curr_sess->players[id_disconnected_position]->is_connected = 0;
 
-    char message[256];
-    snprintf(message, sizeof(message), "disconnected:%d;", player_id);
-    send_message_to_player(id_player_to_send, message);
+
+        // informovani druheho uzivatele o tom, ze prvni vypadl
+        char message[256];    
+        snprintf(message, sizeof(message), "disconnected:%d;", id_disconnected_position);
+        send_message_to_player(id_player_to_send, message);
+    }
+    
+    
     // broadcast_message(message);
     // send_message_to_player(id_player_to_send, players[player_id].nickname);
 
-    players[player_id].is_connected = 0;
-    players[2] = players[player_id];
+    // players[player_id].is_connected = 0;
+    // players[2] = players[player_id];
     
 
     // players_count -= 1;
-
-    players[player_id].is_connected = 0;
     // client_status[player_id].is_connected = 0;
 
     // Nastaví časovač na obnovení
@@ -103,14 +119,6 @@ int handle_disconnect(int player_id) {
             // broadcast_message("Player reconnected!");
             return 0;
         }
-        /*
-        if (client_status[player_id].is_connected) {
-            printf("Player %d reconnected\n", player_id);
-            // TODO: zpracovat tuto zprávu
-            // broadcast_message("Player reconnected!");
-            return;
-        }
-        */
         sleep(1);
     }
 
@@ -161,7 +169,9 @@ void* handle_client(void* arg) {
         players[player_id].last_response_time = time(NULL);
         //client_status[player_id].last_response_time = time(NULL);
 
-        if (bytes_read <= 0) {
+        // TODO: nevím jestli to s vláknem funguje 
+        // TODO: if (players[player_id].socket_fd == -1)
+        if (bytes_read <= 0 || pthread_kill(keep_alive_tid, 0) == ESRCH) {
             // Client disconnected or error
             printf("Client %d disconnected.\n", player_id);
 
@@ -174,19 +184,19 @@ void* handle_client(void* arg) {
                 }
             }
             
-
+            // TODO: udělat jako next free id
             --players_count;
-            //handle_disconnect(player_id);
-            players[player_id].id = 0;
+            //handle_disconnect(player_id);            
+            close(players[player_id].socket_fd);
             players[player_id].socket_fd = -1;
+            players[player_id].id = 0;
             players[player_id].is_connected = 0;
             players[player_id].is_created = 0;
             players[player_id].is_ready = 0;
             players[player_id].is_ready_to_play_hand = 0;
             players[player_id].can_play = 0;
 
-
-            close(players[player_id].socket_fd);
+            
             pthread_exit(NULL);  // Properly exit the thread
         }
 
@@ -292,8 +302,9 @@ void* handle_client(void* arg) {
                 pthread_mutex_lock(&players_mutex);
                 sleep(1);
                 croupier_hit(clients_sess);
-                // TODO: první v session
-                players[0].can_play = 1;
+                // TODO: test
+                clients_sess->players[0]->can_play = 1;
+                // players[0].can_play = 1;
                 pthread_mutex_unlock(&players_mutex);
             }
 
@@ -302,7 +313,6 @@ void* handle_client(void* arg) {
             
         } else if (!strncmp(buffer, "player_get_hit", 14)) {
 
-            // TODO: asi blbe ?
             if (players[player_id].can_play) {
                 player_hit(player_id, clients_sess);
             } else {
@@ -329,24 +339,39 @@ void* handle_client(void* arg) {
                 printf("Failed to extract character.\n");
             }
 
-            // TODO: player_id chyba!!
-            if (player_id == 0) {
-                // TODO: can_play asi odstranit
-                players[0].can_play = 0;
+            // TODO: test
+            if (clients_sess->players[0]->id - 1 == player_id) {
+                clients_sess->players[0]->can_play = 0;
                 hide_players_buttons(0, clients_sess);
-                players[1].can_play = 1;
+                clients_sess->players[1]->can_play = 1;
                 show_players_buttons(1, clients_sess);
-            } else if (player_id == 1) {
-                players[1].can_play = 0;
+            } else if (clients_sess->players[1]->id - 1 == player_id) {
+                clients_sess->players[1]->can_play = 0;
                 hide_players_buttons(1, clients_sess);
                 
-                if (players[0].loses_hand && players[1].loses_hand) {
+                if (clients_sess->players[0]->loses_hand && clients_sess->players[1]->loses_hand) {
                     broadcast_message("hand_ended_for_all;", clients_sess);
                 } else {
-                    // Posílám libovolném uživateli
-                    start_croupier_play(1);
+                    start_croupier_play(clients_sess->players[1]->id - 1);
                 }
             }
+
+            // if (player_id == 0) {
+            //     players[0].can_play = 0;
+            //     hide_players_buttons(0, clients_sess);
+            //     players[1].can_play = 1;
+            //     show_players_buttons(1, clients_sess);
+            // } else if (player_id == 1) {
+            //     players[1].can_play = 0;
+            //     hide_players_buttons(1, clients_sess);
+                
+            //     if (players[0].loses_hand && players[1].loses_hand) {
+            //         broadcast_message("hand_ended_for_all;", clients_sess);
+            //     } else {
+            //         // Posílám libovolném uživateli
+            //         start_croupier_play(1);
+            //     }
+            // }
         } else if (!strncmp(buffer, "croupier_get_hit", 16)) {
             // pthread_mutex_lock(&players_mutex);
             croupier_hit(clients_sess);
@@ -377,7 +402,7 @@ void* handle_client(void* arg) {
                 }
             }
                         
-            unready_to_play_hand_players();
+            unready_to_play_hand_players(clients_sess);
         } else if (!strncmp(buffer, "send_game_over", 14)) {
             broadcast_message("game_over;", clients_sess);
         } else if (!strncmp(buffer, "balance:", 8)) {
@@ -442,20 +467,21 @@ void* handle_client(void* arg) {
                 //     broadcast_message(message1, clients_sess);
                 // }
  
-                clear_players_data();
+                clear_players_data(clients_sess);
             
             }
             pthread_mutex_unlock(&players_mutex);
         } else {
             // unknown message
             send_message_to_player(player_id, "UNKNOWN COMMAND\n");
+            // TODO: ukončit i vlákna keep alive a handle client
+            // TODO: vždy po close ho nastavit na -1 
             close(players[player_id].socket_fd);
         }
  
     }
 }
 
-// TODO: kontrola + použít i na klientovi
 void create_and_send_reset_state_message(int player_id) {
     
     struct session* curr_sess = find_clients_session(player_id);
@@ -531,10 +557,6 @@ void get_first_cards(int player_id, struct session* curr_sess) {
         show_players_buttons(0, curr_sess);
     }
     pthread_mutex_unlock(&players_mutex);
-    // if (players[player_id].id == MAX_PLAYERS) {
-    //     current_player_id = 0;
-    //     show_players_buttons(0);
-    // }
 }
 
 int has_players_first_cards(struct session* curr_sess) {
@@ -684,7 +706,7 @@ int main(int argc, char *argv[]) {
             
 
             printf("Client connected: %s:%d\n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
-            printf("Client %d connected with socket_fd %d.\n", current_player_id, client_socket);
+            printf("Client %d connected with socket_fd %d.\n", players[players_count].id, client_socket);
 
             // Create unique player ID to pass to the thread
             int *player_id = malloc(sizeof(int));

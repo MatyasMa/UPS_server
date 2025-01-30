@@ -12,8 +12,8 @@ void player_hit(int player_id, struct session* curr_sess);
 void hide_players_buttons(int player_position, struct session* curr_sess);
 // void show_players_buttons(int player_id);
 void show_players_buttons(int player_position, struct session* curr_sess);
-void unready_to_play_hand_players(void);
-void clear_players_data(void);
+void unready_to_play_hand_players(struct session* curr_sess);
+void clear_players_data(struct session* curr_sess);
 int is_some_player_disconnected(void);
 
 

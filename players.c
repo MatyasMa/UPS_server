@@ -171,24 +171,35 @@ void show_players_buttons(int player_position, struct session* curr_sess) {
     }
 }
 
-void unready_to_play_hand_players(void) {
-    // TODO: před session
-    for (int i = 0; i < MAX_PLAYERS; ++i) {
-        players[i].has_first_cards = 0;
-        players[i].is_ready_to_play_hand = 0;
-        players[i].loses_hand = 0;
+void unready_to_play_hand_players(struct session* curr_sess) {
+    for (int i = 0; i < MAX_PLAYERS_IN_GAME; ++i) {
+        curr_sess->players[i]->has_first_cards = 0;
+        curr_sess->players[i]->is_ready_to_play_hand = 0;
+        curr_sess->players[i]->loses_hand = 0;
     }
+    // for (int i = 0; i < MAX_PLAYERS; ++i) {
+    //     players[i].has_first_cards = 0;
+    //     players[i].is_ready_to_play_hand = 0;
+    //     players[i].loses_hand = 0;
+    // }
 }
 
 // kromě id
-void clear_players_data(void) {
-    for (int i = 0; i < MAX_PLAYERS; ++i) {
-        players[i].is_ready = 0;
-        players[i].is_ready_to_play_hand = 0;
-        players[i].can_play = 0;
-        players[i].hands_played = 0;
-        players[i].balance = -1;
+void clear_players_data(struct session* curr_sess) {
+    for (int i = 0; i < MAX_PLAYERS_IN_GAME; ++i) {
+        curr_sess->players[i]->is_ready = 0;
+        curr_sess->players[i]->is_ready_to_play_hand = 0;
+        curr_sess->players[i]->can_play = 0;
+        curr_sess->players[i]->hands_played = 0;
+        curr_sess->players[i]->balance = -1;
     }
+    // for (int i = 0; i < MAX_PLAYERS; ++i) {
+    //     players[i].is_ready = 0;
+    //     players[i].is_ready_to_play_hand = 0;
+    //     players[i].can_play = 0;
+    //     players[i].hands_played = 0;
+    //     players[i].balance = -1;
+    // }
 }
 
 int is_some_player_disconnected(void) {
