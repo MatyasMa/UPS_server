@@ -139,6 +139,12 @@ int handle_disconnect(int player_id) {
 }
 
 
+void set_socket_timeout(int socket_fd, int seconds) {
+    struct timeval timeout;
+    timeout.tv_sec = seconds;
+    timeout.tv_usec = 0;
+    setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+}
 
 // Handle client interaction
 void* handle_client(void* arg) {
@@ -170,17 +176,24 @@ void* handle_client(void* arg) {
         exit(EXIT_FAILURE);
     }
 
+    set_socket_timeout(players[player_id].socket_fd, TRY_RECONNECT_TIME);  // Timeout 5 sekund
+
+
     while (1) {
         memset(buffer, 0, sizeof(buffer)); // Clear buffer
         printf("Waiting for message from client %d...\n", player_id);
+        // TODO: zastaví se tady a proto nepokračuje
         bytes_read = recv(players[player_id].socket_fd, buffer, sizeof(buffer), 0);
 
         players[player_id].last_response_time = time(NULL);
         //client_status[player_id].last_response_time = time(NULL);
 
         // TODO: nevím jestli to s vláknem funguje 
-        // TODO: if (players[player_id].socket_fd == -1)
         if (bytes_read <= 0 || pthread_kill(keep_alive_tid, 0) == ESRCH || players[player_id].socket_fd == -1) {
+            
+            if (errno == EWOULDBLOCK || errno == EAGAIN) {
+                printf("Časový limit vypršel, pokračuji dál.\n");
+            }
             // Client disconnected or error
             printf("Client %d disconnected.\n", player_id);
 
