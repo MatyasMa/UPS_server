@@ -60,11 +60,10 @@ void* keep_alive_thread(void* arg) {
                         // TODO: ukončit klienta, došlo k vypingování
                         // TODO: asi se ukončí když soket bude -1
                         pthread_exit(NULL);  
-                    } else {
-                        if (curr_sess->is_full) {
-                            create_and_send_reset_state_message(player_id);
-                        }     
-                    }                
+                    } 
+                    // if (curr_sess->is_full) {
+                    //     create_and_send_reset_state_message(player_id);
+                    // }               
                     // TODO: odeslat hráči stav hry -> ten je uložený v session, dát do vhodného tvaru a poslat hráči s player id
                                    
                 }
@@ -88,6 +87,8 @@ int handle_disconnect(int player_id) {
     
     int id_player_to_send = 0;
     int id_disconnected_position = 0;
+
+    players[player_id].is_connected = 0;
     
     if (curr_sess->is_full) {
         if (curr_sess->players[0]->id - 1 == player_id) {
@@ -122,8 +123,8 @@ int handle_disconnect(int player_id) {
 
     while (time(NULL) - disconnect_time < TRY_RECONNECT_TIME) {
         if (players[player_id].is_connected) {
-            printf("Server se připojil k hráči: Player %s reconnected\n", players[player_id].nickname);
-
+            printf("Server se připojil k hráči - Player %s reconnected\n", players[player_id].nickname);
+            create_and_send_reset_state_message(player_id);
             // broadcast_message("Player reconnected!");
             return 0;
         }
