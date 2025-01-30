@@ -56,6 +56,7 @@ void* keep_alive_thread(void* arg) {
                         // TODO: vyčistit klienta stejně jako v mainu po disconnectu natvrdo, udělat pro to funkci
 
                         // TODO: ukončit klienta, došlo k vypingování
+                        // TODO: asi se ukončí když soket bude -1
                         pthread_exit(NULL);  
                     }                
                     // TODO: odeslat hráči stav hry -> ten je uložený v session, dát do vhodného tvaru a poslat hráči s player id
@@ -88,6 +89,7 @@ int handle_disconnect(int player_id) {
             id_player_to_send = curr_sess->players[1]->id - 1;
         } else if (curr_sess->players[1]->id - 1 == player_id) {
             id_player_to_send = curr_sess->players[0]->id - 1;
+            id_disconnected_position = 1;
         }
         curr_sess->players[id_disconnected_position]->is_connected = 0;
 
