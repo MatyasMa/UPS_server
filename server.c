@@ -21,8 +21,6 @@ void* keep_alive_thread(void* arg) {
     int player_id = *(int*)arg;
 
     free(arg); 
-
-    struct session* curr_sess = find_clients_session(player_id);
     
     while (1) {
         sleep(KEEP_ALIVE_INTERVAL);
@@ -59,6 +57,8 @@ void* keep_alive_thread(void* arg) {
 
                         // TODO: ukončit klienta, došlo k vypingování
                         // TODO: asi se ukončí když soket bude -1
+                        close(players[player_id].socket_fd);
+                        players[player_id].socket_fd = -1;
                         pthread_exit(NULL);  
                     } 
                     // if (curr_sess->is_full) {
@@ -180,7 +180,7 @@ void* handle_client(void* arg) {
 
         // TODO: nevím jestli to s vláknem funguje 
         // TODO: if (players[player_id].socket_fd == -1)
-        if (bytes_read <= 0 || pthread_kill(keep_alive_tid, 0) == ESRCH) {
+        if (bytes_read <= 0 || pthread_kill(keep_alive_tid, 0) == ESRCH || players[player_id].socket_fd == -1) {
             // Client disconnected or error
             printf("Client %d disconnected.\n", player_id);
 
