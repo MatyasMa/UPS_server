@@ -21,6 +21,8 @@ void* keep_alive_thread(void* arg) {
     int player_id = *(int*)arg;
 
     free(arg); 
+
+    struct session* curr_sess = find_clients_session(player_id);
     
     while (1) {
         sleep(KEEP_ALIVE_INTERVAL);
@@ -58,9 +60,13 @@ void* keep_alive_thread(void* arg) {
                         // TODO: ukončit klienta, došlo k vypingování
                         // TODO: asi se ukončí když soket bude -1
                         pthread_exit(NULL);  
+                    } else {
+                        if (curr_sess->is_full) {
+                            create_and_send_reset_state_message(player_id);
+                        }     
                     }                
                     // TODO: odeslat hráči stav hry -> ten je uložený v session, dát do vhodného tvaru a poslat hráči s player id
-                    create_and_send_reset_state_message(player_id);
+                                   
                 }
                 /*
                 if (time(NULL) - client_status[player_id].last_response_time > KEEP_ALIVE_TIMEOUT) {
