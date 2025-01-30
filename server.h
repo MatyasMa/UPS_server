@@ -56,7 +56,7 @@ extern struct session *games;
 
 #define KEEP_ALIVE_INTERVAL 1       // Interval pro odesílání keep-alive zpráv (v sekundách)
 #define KEEP_ALIVE_TIMEOUT 7       // Časový limit pro detekci výpadku (v sekundách)
-#define TRY_RECONNECT_TIME 10
+#define TRY_RECONNECT_TIME 60
 struct client_status {
     int last_response_time;
     int is_connected;
