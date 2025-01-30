@@ -380,29 +380,37 @@ void* handle_client(void* arg) {
             // sleep(1);
             // pthread_mutex_unlock(&players_mutex);
         } else if (!strncmp(buffer, "croupier_play_end", 17)) {
-            // TODO: asi nefunguje!!!!
-            // TODO: ještě když mají oba to many, tak stejně 
+
             for (int i = 0; i < MAX_PLAYERS_IN_GAME; ++i) {
                 clients_sess->players[i]->has_first_cards = 0;
             }
             
-
             broadcast_message("hand_ended_for_all;", clients_sess);
 
         } else if (!strncmp(buffer, "hand_end", 8)) {
             
-            // TODO: ne takhle před id !! 
-            if (players[0].hands_played == MAX_HANDS_PLAY || players[1].hands_played == MAX_HANDS_PLAY) {
+            if (clients_sess->players[0]->hands_played == MAX_HANDS_PLAY || clients_sess->players[1]->hands_played == MAX_HANDS_PLAY) {
 
-                while (!(players[0].hands_played == MAX_HANDS_PLAY && players[1].hands_played == MAX_HANDS_PLAY)) {
+                while (!(clients_sess->players[0]->hands_played == MAX_HANDS_PLAY && clients_sess->players[1]->hands_played == MAX_HANDS_PLAY)) {
                     sleep(1);
                     printf("čekám\n");
                 }
 
-                if (player_id == 1) {
+                if (clients_sess->players[1]->id - 1 == player_id) {
                     broadcast_message("game_over;", clients_sess);                          
                 }
             }
+            // if (players[0].hands_played == MAX_HANDS_PLAY || players[1].hands_played == MAX_HANDS_PLAY) {
+
+            //     while (!(players[0].hands_played == MAX_HANDS_PLAY && players[1].hands_played == MAX_HANDS_PLAY)) {
+            //         sleep(1);
+            //         printf("čekám\n");
+            //     }
+
+            //     if (player_id == 1) {
+            //         broadcast_message("game_over;", clients_sess);                          
+            //     }
+            // }
                         
             unready_to_play_hand_players(clients_sess);
         } else if (!strncmp(buffer, "send_game_over", 14)) {
