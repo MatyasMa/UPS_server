@@ -147,6 +147,9 @@ int handle_disconnect(int player_id) {
 
     // v room je nyní jeden hráč -> není plná
     curr_sess->is_full = 0;
+    strcpy(curr_sess->player_one_cards, "");
+    strcpy(curr_sess->player_two_cards, "");
+    strcpy(curr_sess->croupier_cards, "");
 
     // Odstranění hráče po překročení časového limitu
     printf("Player %d failed to reconnect. Ending game for this player.\n", player_id);    
@@ -531,7 +534,7 @@ void* handle_client(void* arg) {
                 players[player_id].can_play = 0;
                 --players_count;
 
-                thread_exit(NULL);
+                pthread_exit(NULL);
                 break;
             }
             token = strtok(NULL, "/");
