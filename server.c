@@ -142,7 +142,7 @@ int handle_disconnect(int player_id) {
         sleep(1);
     }
     
-    snprintf(message, sizeof(message), "win_%d_%d;", players[id_player_to_send].balance, -1);
+    snprintf(message, sizeof(message), "win:%d_%d;", 0, -1);
     send_message_to_player(id_player_to_send, message);
 
     // v room je nyní jeden hráč -> není plná
@@ -523,6 +523,16 @@ void* handle_client(void* arg) {
                 // TODO: ukončit i vlákna keep alive a handle client
                 close(players[player_id].socket_fd);
                 players[player_id].socket_fd = -1;
+                players[player_id].id = 0;
+                players[player_id].is_connected = 0;
+                players[player_id].is_created = 0;
+                players[player_id].is_ready = 0;
+                players[player_id].is_ready_to_play_hand = 0;
+                players[player_id].can_play = 0;
+                --players_count;
+
+                thread_exit(NULL);
+                break;
             }
             token = strtok(NULL, "/");
         }
