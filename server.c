@@ -50,23 +50,31 @@ void* keep_alive_thread(void* arg) {
                 if (time(NULL) - players[player_id].last_response_time > KEEP_ALIVE_TIMEOUT) {
                     printf("Client %d timeout\n", player_id);
                     if(handle_disconnect(player_id)) {
-                        // TODO: -> uzavřít zde soket a vyčistit odpojeného uživatele, po timeout!!
+                        /*
+                        send message, dis error, která odkáže do lobby a oznámí vítězství protihráče hráče s player_id
+                        vyčistit uživatele player_id zde na serveru
+                        na klientovi - ve hře vyčistit oba uživatele stejně jako když skončí hra - poslali balance
 
+                        */
 
-                        // TODO: ukončit klienta a oznámit mu že vyhrál
-                        // TODO: nastavit room na prázdnou, protože v ní zůstane jen jeden uživatel
-                        // TODO: vyčistit klienta stejně jako v mainu po disconnectu natvrdo, udělat pro to funkci
-
-                        // TODO: ukončit klienta, došlo k vypingování
-                        // TODO: asi se ukončí když soket bude -1
-                        close(players[player_id].socket_fd);
-                        players[player_id].socket_fd = -1;
+                        // už by mělo být ukončeno
+                        if (players[player_id].socket_fd != -1) {
+                            close(players[player_id].socket_fd);
+                            players[player_id].socket_fd = -1;
+                            players[player_id].id = 0;
+                            players[player_id].is_connected = 0;
+                            players[player_id].is_created = 0;
+                            players[player_id].is_ready = 0;
+                            players[player_id].is_ready_to_play_hand = 0;
+                            players[player_id].can_play = 0;  
+                        }
+                                      
+                        
                         pthread_exit(NULL);  
                     } 
                     // if (curr_sess->is_full) {
                     //     create_and_send_reset_state_message(player_id);
                     // }               
-                    // TODO: odeslat hráči stav hry -> ten je uložený v session, dát do vhodného tvaru a poslat hráči s player id
                                    
                 }
                 /*
@@ -87,6 +95,7 @@ int handle_disconnect(int player_id) {
 
     struct session* curr_sess = find_clients_session(player_id);
     
+    char message[256]; 
     int id_player_to_send = 0;
     int id_disconnected_position = 0;
 
@@ -104,7 +113,7 @@ int handle_disconnect(int player_id) {
 
 
         // informovani druheho uzivatele o tom, ze prvni vypadl
-        char message[256];    
+           
         snprintf(message, sizeof(message), "disconnected:%d;", id_disconnected_position);
         send_message_to_player(id_player_to_send, message);
     }
@@ -132,12 +141,16 @@ int handle_disconnect(int player_id) {
         }
         sleep(1);
     }
+    
+    snprintf(message, sizeof(message), "win_%d_%d;", players[id_player_to_send].balance, -1);
+    send_message_to_player(id_player_to_send, message);
+
+    // v room je nyní jeden hráč -> není plná
+    curr_sess->is_full = 0;
 
     // Odstranění hráče po překročení časového limitu
-    printf("Player %d failed to reconnect. Ending game for this player.\n", player_id);
+    printf("Player %d failed to reconnect. Ending game for this player.\n", player_id);    
     return 1;
-    // TODO: broadcast_message("Player failed to reconnect. Game over.");
-    // TODO:  remove_player(player_id); - zrušit hráče hraje novej
 }
 
 
@@ -185,9 +198,10 @@ void* handle_client(void* arg) {
         memset(buffer, 0, sizeof(buffer)); // Clear buffer
         printf("Waiting for message from client %d...\n", player_id);
 
+        players[player_id].last_response_time = time(NULL);
         bytes_read = recv(players[player_id].socket_fd, buffer, sizeof(buffer), 0);
 
-        players[player_id].last_response_time = time(NULL);
+        
         //client_status[player_id].last_response_time = time(NULL);
 
         if (bytes_read <= 0 || pthread_kill(keep_alive_tid, 0) == ESRCH || players[player_id].socket_fd == -1) {
@@ -204,23 +218,26 @@ void* handle_client(void* arg) {
             }
             
             // TODO: udělat jako next free id
+            // TODO: přidat do unknown message
             --players_count;
-            //handle_disconnect(player_id);            
-            close(players[player_id].socket_fd);
-            players[player_id].socket_fd = -1;
-            players[player_id].id = 0;
-            players[player_id].is_connected = 0;
-            players[player_id].is_created = 0;
-            players[player_id].is_ready = 0;
-            players[player_id].is_ready_to_play_hand = 0;
-            players[player_id].can_play = 0;
+            //handle_disconnect(player_id);
+            if (players[player_id].socket_fd != -1) {
+                close(players[player_id].socket_fd);
+                players[player_id].socket_fd = -1;
+                players[player_id].id = 0;
+                players[player_id].is_connected = 0;
+                players[player_id].is_created = 0;
+                players[player_id].is_ready = 0;
+                players[player_id].is_ready_to_play_hand = 0;
+                players[player_id].can_play = 0;
+            }            
 
             
             pthread_exit(NULL);  // Properly exit the thread
         }
 
         buffer[bytes_read] = '\0';
-        printf("buffer: %s\n",buffer);
+        // printf("buffer: %s\n",buffer);
 
     
         char *token = strtok(buffer, "/");
@@ -504,8 +521,8 @@ void* handle_client(void* arg) {
                 // unknown message
                 send_message_to_player(player_id, "UNKNOWN COMMAND\n");
                 // TODO: ukončit i vlákna keep alive a handle client
-                // TODO: vždy po close ho nastavit na -1 
                 close(players[player_id].socket_fd);
+                players[player_id].socket_fd = -1;
             }
             token = strtok(NULL, "/");
         }
